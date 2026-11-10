@@ -29,7 +29,7 @@
 - `pnpm-workspace.yaml`: `minimumReleaseAge: 4320` (3 días), `saveExact: true`, `allowBuilds` con `sharp` y `unrs-resolver` en `false`
 - `tsconfig.json`: `strict` y `erasableSyntaxOnly` activos
 - Alias de imports: `@/*` → `./src/*`
-- Scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `prepare` (Husky)
+- Scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `check`, `check:full`, `prepare` (Husky)
 - `.prettierrc`: sin `;`, comillas dobles, `trailingComma: all`, `printWidth: 100`, plugin de Tailwind
 - `.prettierignore`: incluye `src/core/types/database.types.ts` (generado por Supabase) y `pnpm-lock.yaml`
 - `.gitignore`: base de `create-next-app` + `/dist`, `*.log`, `/playwright-report/`, `/test-results/` y la excepción `!.env.example`
@@ -51,24 +51,24 @@
 - [x] Prettier instalado, configurado y aplicado a todo el repo (`format:check` en verde)
 - [x] Husky y lint-staged instalados y configurados
 - [x] Hook `pre-commit` (lint-staged + typecheck) configurado; probado con `lint-staged --all`
-- [ ] Prueba completa del hook con archivos reales en staging (al armar los commits)
+- [x] Prueba completa del hook con archivos reales en staging (al armar los commits)
+- [x] Docs actualizados con los cambios del setup (`Stack_restoDev`, `Git_workflow`, `Estructura_de_carpetas`)
+- [x] Setup commiteado y PR abierto hacia `develop` (en revisión)
+- [x] Scripts `check` y `check:full` agregados y verificados (`build` en verde)
 - [ ] `.env.example` y validación de variables de entorno con Zod
-- [ ] Actualizar `docs/Stack_restoDev.md`, `docs/Git_workflow.md` y `docs/Estructura_de_carpetas.md` con los cambios de este setup
-- [ ] Setup sin commitear (todo untracked; modificados: `README.md` y `docs/` por el formato de Prettier)
 - [ ] Boilerplate de `create-next-app` sin limpiar
 
 ## Próximos pasos
 
-1. Crear `.env.example` (sin valores reales) y validar variables de entorno con Zod (`src/lib/env.ts`)
-2. Actualizar los docs afectados: `Stack_restoDev.md` (lint-staged en Calidad), `Git_workflow.md` (`!.env.example` y qué corre el pre-commit) y `Estructura_de_carpetas.md` (`.prettierignore`, `lint-staged.config.mjs`)
-3. Armar los commits del setup en grupos lógicos (por ejemplo: setup de Next/pnpm/TypeScript, Prettier/Husky/lint-staged, `style: format docs with prettier`) y abrir PR a `develop`
-4. Limpiar boilerplate: `src/app/page.tsx`, `globals.css`, `public/*.svg` (en rama nueva desde `develop`)
-5. Crear estructura de `src/` según `docs/Estructura_de_carpetas.md`
-6. Escribir el primer contrato en `docs/contracts/users/` con `_template.md`
-7. Implementar la primera action con su schema Zod, siguiendo `docs/Contratos_de_actions.md`
-8. Elegir e instalar la capa de datos según `docs/Stack_restoDev.md`
-9. Agregar CI en PRs: `typecheck` + `lint` + `build`
-10. Agregar tests (Vitest) cuando exista lógica de negocio
+1. Esperar aprobación y merge del PR de `chore/project-setup` (squash); luego `git switch develop && git pull`
+2. Crear `.env.example` (sin valores reales) y validar variables de entorno con Zod (`src/lib/env.ts`) en `chore/env-validation`
+3. Limpiar boilerplate: `src/app/page.tsx`, `globals.css`, `public/*.svg` (en rama nueva desde `develop`)
+4. Crear estructura de `src/` según `docs/Estructura_de_carpetas.md`
+5. Escribir el primer contrato en `docs/contracts/users/` con `_template.md`
+6. Implementar la primera action con su schema Zod, siguiendo `docs/Contratos_de_actions.md`
+7. Elegir e instalar la capa de datos según `docs/Stack_restoDev.md`
+8. Agregar CI en PRs: `format:check` + `lint` + `typecheck` + `build` (los mismos comandos de `pnpm check:full`)
+9. Agregar tests (Vitest) cuando exista lógica de negocio y sumarlos a `check`
 
 ## Decisiones abiertas
 
@@ -77,7 +77,9 @@
 
 ## Registro de cambios
 
-| Fecha      | Cambio                                                                |
-| ---------- | --------------------------------------------------------------------- |
-| 2026-11-10 | Archivo creado                                                        |
-| 2026-11-10 | Setup de calidad: Prettier, Husky, lint-staged; `.gitignore` ajustado |
+| Fecha      | Cambio                                                                    |
+| ---------- | ------------------------------------------------------------------------- |
+| 2026-11-10 | Archivo creado                                                            |
+| 2026-11-10 | Setup de calidad: Prettier, Husky, lint-staged; `.gitignore` ajustado     |
+| 2026-11-10 | Setup commiteado en `chore/project-setup`; PR abierto hacia `develop`     |
+| 2026-11-10 | Scripts `check` y `check:full`; docs actualizados con el setup de calidad |
