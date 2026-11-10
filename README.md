@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# resto-app (restoDev)
 
-## Getting Started
+Aplicación web para la gestión de un restaurante. Está construida con Next.js (App Router), TypeScript y Supabase.
 
-First, run the development server:
+> **Estado:** setup inicial del proyecto. Todavía no hay funcionalidades; la estructura de `src/` y la capa de datos se están incorporando por etapas. El avance detallado está en [`PROGRESO.md`](./PROGRESO.md).
+
+## Requisitos
+
+| Herramienta | Versión |
+| ----------- | ------- |
+| Node.js     | 24.x    |
+| pnpm        | 12.x    |
+
+Este proyecto usa **pnpm** como único gestor de paquetes.
+
+## Puesta en marcha
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 1. Clonar el repositorio (la rama por defecto es develop)
+git clone <url-del-repositorio>
+cd restoDev
+
+# 2. Instalar dependencias (también activa los hooks de Husky)
+pnpm install
+
+# 3. Levantar el servidor de desarrollo
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+La app queda disponible en [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Comando             | Qué hace                                                                    |
+| ------------------- | --------------------------------------------------------------------------- |
+| `pnpm dev`          | Servidor de desarrollo                                                      |
+| `pnpm build`        | Build de producción                                                         |
+| `pnpm start`        | Sirve el build de producción                                                |
+| `pnpm lint`         | ESLint sobre todo el repo                                                   |
+| `pnpm typecheck`    | Genera los tipos de rutas y corre `tsc --noEmit`                            |
+| `pnpm format`       | Reformatea todo el repo con Prettier (**modifica archivos**)                |
+| `pnpm format:check` | Verifica el formato sin modificar nada                                      |
+| `pnpm check`        | `format:check` + `lint` + `typecheck`. Rápido; correrlo antes de `pnpm dev` |
+| `pnpm check:full`   | `check` + `build`. Correrlo antes de abrir un Pull Request                  |
 
-## Learn More
+## Verificación del código
 
-To learn more about Next.js, take a look at the following resources:
+- **Antes de levantar el servidor:** `pnpm check`
+- **Antes de abrir un PR:** `pnpm check:full`
+- **En cada commit:** el hook de Husky corre `lint-staged` (ESLint y Prettier sobre los archivos en staging) y luego `pnpm typecheck`. Si falla, se corrige y se vuelve a commitear; no se usa `--no-verify`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Si `format:check` falla, `pnpm format` lo corrige.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Stack
 
-## Deploy on Vercel
+Next.js 16 (App Router) · React 19 · TypeScript (strict, `erasableSyntaxOnly`) · Tailwind CSS 4 · Zod · ESLint · Prettier · Husky · lint-staged.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Documentación
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Documento                                                                | Contenido                                   |
+| ------------------------------------------------------------------------ | ------------------------------------------- |
+| [`docs/Stack_restoDev.md`](./docs/Stack_restoDev.md)                     | Tecnologías del proyecto                    |
+| [`docs/Estructura_de_carpetas.md`](./docs/Estructura_de_carpetas.md)     | Organización de carpetas                    |
+| [`docs/Convenciones_de_archivos.md`](./docs/Convenciones_de_archivos.md) | Nombres y responsabilidades de los archivos |
+| [`docs/Contratos_de_actions.md`](./docs/Contratos_de_actions.md)         | Cómo escribir el contrato de cada Action    |
+| [`docs/Reglas_de_negocio.md`](./docs/Reglas_de_negocio.md)               | Reglas de negocio                           |
+| [`docs/Git_workflow.md`](./docs/Git_workflow.md)                         | Ramas, commits, PR y publicación            |
