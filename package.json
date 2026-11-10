@@ -10,7 +10,9 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck",
+    "check:full": "pnpm run check && pnpm run build"
   },
   "dependencies": {
     "next": "16.4.5",

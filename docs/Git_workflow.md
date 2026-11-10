@@ -61,7 +61,7 @@ Reglas:
 
 - Un commit = un cambio lógico. Si el resumen necesita "y", probablemente son dos commits.
 - Si el motivo no es obvio, explicarlo en el cuerpo del commit (el "porqué", no el "qué") y en la sección de comentarios del PR.
-- Husky ejecuta las validaciones en cada commit (pre-commit). Si fallan, se corrige y se vuelve a commitear; no se saltea con `--no-verify`.
+- Husky ejecuta las validaciones en cada commit (pre-commit): primero `lint-staged` (ESLint con `--fix` y Prettier sobre los archivos en staging) y luego `pnpm run typecheck` sobre todo el proyecto. Si fallan, se corrige y se vuelve a commitear; no se saltea con `--no-verify`.
 
 Ejemplos:
 
@@ -80,7 +80,7 @@ docs: add contract for createOrder action
 2. Crear la rama de trabajo desde `develop` (`git switch -c feature/products-create-action`).
 3. Programar y commitear siguiendo la sección 3.
 4. Antes de abrir el PR, traer lo último de `develop` a la rama (`git fetch` y `git rebase origin/develop`). Si ya se había subido la rama, se sube con `git push --force-with-lease`. Reescribir una rama propia y sin PR mergeado está permitido; el historial de `develop` y `main` nunca se reescribe.
-5. Correr `pnpm run typecheck` (y los tests, cuando existan) en verde.
+5. Correr `pnpm run check:full` en verde (formato, lint, typecheck y build). Antes de levantar el servidor local alcanza con `pnpm run check`. Cuando existan tests, se suman a `check`.
 6. Subir la rama y abrir el PR **hacia `develop`**.
    - Título con el formato de commit (ej. `feat(products): add createProduct action and service`).
    - Descripción: qué cambia, por qué, y cómo se verificó. Los detalles extra van en la sección de comentarios.
@@ -116,7 +116,7 @@ Configurar un Ruleset (o Branch protection) en **`main`** y **`develop`**:
 
 - Requerir Pull Request antes de mergear (sin push directo).
 - Requerir al menos 1 aprobación.
-- Requerir checks en verde (typecheck, lint, tests) antes de mergear.
+- Requerir checks en verde (format:check, lint, typecheck, build y tests) antes de mergear. Son los mismos comandos de `pnpm run check:full`, que el CI debe replicar.
 - Bloquear force push.
 - Bloquear el borrado de la rama.
 - Aplicar las reglas también a administradores.
@@ -151,6 +151,7 @@ test-results/
 
 - Sí se versiona `pnpm-lock.yaml`.
 - Nunca se versionan secretos ni credenciales (llaves de Supabase, SerpApi, WhatsApp Cloud API, claves VAPID). Para documentar variables de entorno se usa `.env.example` sin valores reales.
+- Excepción: `!.env.example` se versiona siempre, para documentar las variables de entorno sin valores reales.
 
 ## 10. Primer arranque del repositorio (histórico)
 
