@@ -1,18 +1,18 @@
 # <actionName> — <Título>
 
-| Campo | Valor |
-|---|---|
-| Action | `src/actions/<modulo>/<actionName>.action.ts` |
-| Schema | `src/core/schemas/<modulo>/<actionName>.schema.ts` |
-| Servicio | `src/core/services/<modulo>/<actionName>.service.ts` |
-| Permiso | |
-| Equivalente API | `<MÉTODO> /api/... → <status>` |
+| Campo           | Valor                                                |
+| --------------- | ---------------------------------------------------- |
+| Action          | `src/actions/<modulo>/<actionName>.action.ts`        |
+| Schema          | `src/core/schemas/<modulo>/<actionName>.schema.ts`   |
+| Servicio        | `src/core/services/<modulo>/<actionName>.service.ts` |
+| Permiso         |                                                      |
+| Equivalente API | `<MÉTODO> /api/... → <status>`                       |
 
 ## Input
 
 | Campo | Tipo | Reglas | Requerido |
-|---|---|---|---|
-| | | | |
+| ----- | ---- | ------ | --------- |
+|       |      |        |           |
 
 ```json
 {}
@@ -29,8 +29,8 @@
 ## Errores
 
 | code | Cuándo | message | HTTP (API) |
-|---|---|---|---|
-| | | | |
+| ---- | ------ | ------- | ---------- |
+|      |        |         |            |
 
 ```json
 { "ok": false, "error": { "code": "", "message": "" } }

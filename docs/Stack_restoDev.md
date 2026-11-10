@@ -8,7 +8,7 @@ Respetar cada ítem. No sustituir tecnologías ni agregar alternativas.
 - [ ] Lenguaje: TypeScript con `"erasableSyntaxOnly": true` en `tsconfig.json` (sin `enum` ni `namespace`)
 - [ ] Framework: Next.js (App Router)
 - [ ] UI: React
-- [ ] Calidad: ESLint + Prettier + Husky (validación pre-commit)
+- [ ] Calidad: ESLint + Prettier + Husky + lint-staged (validación pre-commit solo sobre archivos en staging)
 
 ## 2. Enrutamiento y Comunicación
 

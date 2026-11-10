@@ -2,10 +2,10 @@
 
 ## 1. Ramas principales
 
-| Rama      | Rol                                                                 | Push directo | Se integra mediante                       |
-| --------- | ------------------------------------------------------------------- | ------------ | ----------------------------------------- |
-| `main`    | Código probado y aprobado, listo para producción (Vercel production) | No           | PR desde `develop` (merge commit)         |
-| `develop` | Rama de integración y rama por defecto del repositorio (previews)    | No           | PR desde ramas de trabajo (squash)        |
+| Rama      | Rol                                                                  | Push directo | Se integra mediante                |
+| --------- | -------------------------------------------------------------------- | ------------ | ---------------------------------- |
+| `main`    | Código probado y aprobado, listo para producción (Vercel production) | No           | PR desde `develop` (merge commit)  |
+| `develop` | Rama de integración y rama por defecto del repositorio (previews)    | No           | PR desde ramas de trabajo (squash) |
 
 Reglas:
 
@@ -141,6 +141,7 @@ dist/
 .env
 .env.local
 .env*.local
+!.env.example
 .vercel/
 *.log
 coverage/
