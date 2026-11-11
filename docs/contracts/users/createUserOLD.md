@@ -1,21 +1,21 @@
 # createUser — Crear usuario
 
-| Campo | Valor |
-|---|---|
-| Action | `src/actions/users/createUser.action.ts` |
-| Schema | `src/core/schemas/users/createUser.schema.ts` |
-| Servicio | `src/core/services/users/createUser.service.ts` |
-| Permiso | Sesión activa, rol `admin` |
-| Equivalente API | `POST /api/users → 201` |
+| Campo           | Valor                                           |
+| --------------- | ----------------------------------------------- |
+| Action          | `src/actions/users/createUser.action.ts`        |
+| Schema          | `src/core/schemas/users/createUser.schema.ts`   |
+| Servicio        | `src/core/services/users/createUser.service.ts` |
+| Permiso         | Sesión activa, rol `admin`                      |
+| Equivalente API | `POST /api/users → 201`                         |
 
 ## Input
 
-| Campo | Tipo | Reglas | Requerido |
-|---|---|---|---|
-| `email` | `string` | Email válido, único | Sí |
-| `full_name` | `string` | 2–80 caracteres | Sí |
-| `role` | `"admin" \| "staff" \| "client"` |  | Sí |
-| `phone` | `string` | Formato E.164 | No |
+| Campo       | Tipo                             | Reglas              | Requerido |
+| ----------- | -------------------------------- | ------------------- | --------- |
+| `email`     | `string`                         | Email válido, único | Sí        |
+| `full_name` | `string`                         | 2–80 caracteres     | Sí        |
+| `role`      | `"admin" \| "staff" \| "client"` |                     | Sí        |
+| `phone`     | `string`                         | Formato E.164       | No        |
 
 ```json
 {
@@ -48,13 +48,13 @@
 
 ## Errores
 
-| code | Cuándo | message | HTTP (API) |
-|---|---|---|---|
-| `VALIDATION_ERROR` | Falla el schema | Datos inválidos | 400 |
-| `UNAUTHORIZED` | Sin sesión | Sesión requerida | 401 |
-| `FORBIDDEN` | El rol no es `admin` | No tenés permiso para crear usuarios | 403 |
-| `CONFLICT` | El email ya existe | El email ya está registrado | 409 |
-| `INTERNAL_ERROR` | Falla inesperada | Error inesperado. Intentá de nuevo | 500 |
+| code               | Cuándo               | message                              | HTTP (API) |
+| ------------------ | -------------------- | ------------------------------------ | ---------- |
+| `VALIDATION_ERROR` | Falla el schema      | Datos inválidos                      | 400        |
+| `UNAUTHORIZED`     | Sin sesión           | Sesión requerida                     | 401        |
+| `FORBIDDEN`        | El rol no es `admin` | No tenés permiso para crear usuarios | 403        |
+| `CONFLICT`         | El email ya existe   | El email ya está registrado          | 409        |
+| `INTERNAL_ERROR`   | Falla inesperada     | Error inesperado. Intentá de nuevo   | 500        |
 
 ```json
 {
@@ -63,9 +63,7 @@
     "code": "VALIDATION_ERROR",
     "message": "Datos inválidos",
     "fieldErrors": {
-      "email": [
-        "Email inválido"
-      ]
+      "email": ["Email inválido"]
     }
   }
 }

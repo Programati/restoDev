@@ -1,22 +1,22 @@
 # createUser — Crear usuario
 
-| Campo | Valor |
-|---|---|
-| Action | `src/actions/users/createUser.action.ts` |
-| Schema | `src/core/schemas/users/createUser.schema.ts` |
-| Servicio | `src/core/services/users/createUser.service.ts` |
-| Permiso | Sesión activa, rol `admin` |
-| Equivalente API | `POST /api/users → 201` |
+| Campo           | Valor                                           |
+| --------------- | ----------------------------------------------- |
+| Action          | `src/actions/users/createUser.action.ts`        |
+| Schema          | `src/core/schemas/users/createUser.schema.ts`   |
+| Servicio        | `src/core/services/users/createUser.service.ts` |
+| Permiso         | Sesión activa, rol `admin`                      |
+| Equivalente API | `POST /api/users → 201`                         |
 
 ## Input
 
-| Campo | Tipo | Reglas | Requerido |
-|---|---|---|---|
-| `email` | `string` | Email válido, único en `auth.users` | Sí |
-| `full_name` | `string` | 2–80 caracteres | Sí |
-| `roles` | `string[]` | 1 o más códigos de `roles.code`, sin repetir. Cada código debe existir y estar activo (`roles.active`) | Sí |
-| `phone` | `string` | Formato E.164 | No |
-| `notes` | `string` | Texto libre, máx. 500 caracteres | No |
+| Campo       | Tipo       | Reglas                                                                                                 | Requerido |
+| ----------- | ---------- | ------------------------------------------------------------------------------------------------------ | --------- |
+| `email`     | `string`   | Email válido, único en `auth.users`                                                                    | Sí        |
+| `full_name` | `string`   | 2–80 caracteres                                                                                        | Sí        |
+| `roles`     | `string[]` | 1 o más códigos de `roles.code`, sin repetir. Cada código debe existir y estar activo (`roles.active`) | Sí        |
+| `phone`     | `string`   | Formato E.164                                                                                          | No        |
+| `notes`     | `string`   | Texto libre, máx. 500 caracteres                                                                       | No        |
 
 No son input: `id` (lo genera `auth.users`), `active` (inicia en `true`), `archived_at` (inicia en `null`).
 
@@ -55,13 +55,13 @@ No son input: `id` (lo genera `auth.users`), `active` (inicia en `true`), `archi
 
 ## Errores
 
-| code | Cuándo | message | HTTP (API) |
-|---|---|---|---|
-| `VALIDATION_ERROR` | Falla el schema, o algún código de `roles` no existe o está inactivo | Datos inválidos | 400 |
-| `UNAUTHORIZED` | Sin sesión | Sesión requerida | 401 |
-| `FORBIDDEN` | El usuario no tiene el rol `admin` | No tenés permiso para crear usuarios | 403 |
-| `CONFLICT` | El email ya existe en `auth.users` | El email ya está registrado | 409 |
-| `INTERNAL_ERROR` | Falla inesperada | Error inesperado. Intentá de nuevo | 500 |
+| code               | Cuándo                                                               | message                              | HTTP (API) |
+| ------------------ | -------------------------------------------------------------------- | ------------------------------------ | ---------- |
+| `VALIDATION_ERROR` | Falla el schema, o algún código de `roles` no existe o está inactivo | Datos inválidos                      | 400        |
+| `UNAUTHORIZED`     | Sin sesión                                                           | Sesión requerida                     | 401        |
+| `FORBIDDEN`        | El usuario no tiene el rol `admin`                                   | No tenés permiso para crear usuarios | 403        |
+| `CONFLICT`         | El email ya existe en `auth.users`                                   | El email ya está registrado          | 409        |
+| `INTERNAL_ERROR`   | Falla inesperada                                                     | Error inesperado. Intentá de nuevo   | 500        |
 
 ```json
 {
@@ -70,9 +70,7 @@ No son input: `id` (lo genera `auth.users`), `active` (inicia en `true`), `archi
     "code": "VALIDATION_ERROR",
     "message": "Datos inválidos",
     "fieldErrors": {
-      "email": [
-        "Email inválido"
-      ]
+      "email": ["Email inválido"]
     }
   }
 }

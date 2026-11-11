@@ -1,18 +1,18 @@
 # getUser — Obtener usuario
 
-| Campo | Valor |
-|---|---|
-| Action | `src/actions/users/getUser.action.ts` |
-| Schema | `src/core/schemas/users/getUser.schema.ts` |
-| Servicio | `src/core/services/users/getUser.service.ts` |
-| Permiso | Sesión activa. `admin` ve cualquiera; el resto solo su propio perfil (RLS) |
-| Equivalente API | `GET /api/users/{id} → 200` |
+| Campo           | Valor                                                                      |
+| --------------- | -------------------------------------------------------------------------- |
+| Action          | `src/actions/users/getUser.action.ts`                                      |
+| Schema          | `src/core/schemas/users/getUser.schema.ts`                                 |
+| Servicio        | `src/core/services/users/getUser.service.ts`                               |
+| Permiso         | Sesión activa. `admin` ve cualquiera; el resto solo su propio perfil (RLS) |
+| Equivalente API | `GET /api/users/{id} → 200`                                                |
 
 ## Input
 
-| Campo | Tipo | Reglas | Requerido |
-|---|---|---|---|
-| `id` | `uuid` | UUID válido | Sí |
+| Campo | Tipo   | Reglas      | Requerido |
+| ----- | ------ | ----------- | --------- |
+| `id`  | `uuid` | UUID válido | Sí        |
 
 ```json
 {
@@ -42,12 +42,12 @@
 
 ## Errores
 
-| code | Cuándo | message | HTTP (API) |
-|---|---|---|---|
-| `VALIDATION_ERROR` | `id` no es un UUID | Datos inválidos | 400 |
-| `UNAUTHORIZED` | Sin sesión | Sesión requerida | 401 |
-| `NOT_FOUND` | No existe o RLS lo oculta | Usuario no encontrado | 404 |
-| `INTERNAL_ERROR` | Falla inesperada | Error inesperado. Intentá de nuevo | 500 |
+| code               | Cuándo                    | message                            | HTTP (API) |
+| ------------------ | ------------------------- | ---------------------------------- | ---------- |
+| `VALIDATION_ERROR` | `id` no es un UUID        | Datos inválidos                    | 400        |
+| `UNAUTHORIZED`     | Sin sesión                | Sesión requerida                   | 401        |
+| `NOT_FOUND`        | No existe o RLS lo oculta | Usuario no encontrado              | 404        |
+| `INTERNAL_ERROR`   | Falla inesperada          | Error inesperado. Intentá de nuevo | 500        |
 
 ```json
 {
@@ -56,9 +56,7 @@
     "code": "VALIDATION_ERROR",
     "message": "Datos inválidos",
     "fieldErrors": {
-      "id": [
-        "UUID inválido"
-      ]
+      "id": ["UUID inválido"]
     }
   }
 }

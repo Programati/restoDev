@@ -1,0 +1,9 @@
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
+
+# Cooldown: no instalar versiones publicadas hace menos de 3 días (en minutos)
+minimumReleaseAge: 4320
+
+# Que `pnpm add` guarde versiones exactas, sin caret
+saveExact: true

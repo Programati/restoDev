@@ -1,21 +1,21 @@
 # listUsers — Listar usuarios
 
-| Campo | Valor |
-|---|---|
-| Action | `src/actions/users/listUsers.action.ts` |
-| Schema | `src/core/schemas/users/listUsers.schema.ts` |
-| Servicio | `src/core/services/users/listUsers.service.ts` |
-| Permiso | Sesión activa, rol `admin` |
+| Campo           | Valor                                                |
+| --------------- | ---------------------------------------------------- |
+| Action          | `src/actions/users/listUsers.action.ts`              |
+| Schema          | `src/core/schemas/users/listUsers.schema.ts`         |
+| Servicio        | `src/core/services/users/listUsers.service.ts`       |
+| Permiso         | Sesión activa, rol `admin`                           |
 | Equivalente API | `GET /api/users?page=&pageSize=&search=&role= → 200` |
 
 ## Input
 
-| Campo | Tipo | Reglas | Requerido |
-|---|---|---|---|
-| `page` | `number` | Entero ≥ 1. Por defecto 1 | No |
-| `pageSize` | `number` | Entero 1–100. Por defecto 20 | No |
-| `search` | `string` | Máx. 80 caracteres. Busca en `full_name` y `email` | No |
-| `role` | `"admin" \| "staff" \| "client"` | Filtro por rol | No |
+| Campo      | Tipo                             | Reglas                                             | Requerido |
+| ---------- | -------------------------------- | -------------------------------------------------- | --------- |
+| `page`     | `number`                         | Entero ≥ 1. Por defecto 1                          | No        |
+| `pageSize` | `number`                         | Entero 1–100. Por defecto 20                       | No        |
+| `search`   | `string`                         | Máx. 80 caracteres. Busca en `full_name` y `email` | No        |
+| `role`     | `"admin" \| "staff" \| "client"` | Filtro por rol                                     | No        |
 
 ```json
 {
@@ -55,12 +55,12 @@
 
 ## Errores
 
-| code | Cuándo | message | HTTP (API) |
-|---|---|---|---|
-| `VALIDATION_ERROR` | Falla el schema | Datos inválidos | 400 |
-| `UNAUTHORIZED` | Sin sesión | Sesión requerida | 401 |
-| `FORBIDDEN` | El rol no es `admin` | No tenés permiso para listar usuarios | 403 |
-| `INTERNAL_ERROR` | Falla inesperada | Error inesperado. Intentá de nuevo | 500 |
+| code               | Cuándo               | message                               | HTTP (API) |
+| ------------------ | -------------------- | ------------------------------------- | ---------- |
+| `VALIDATION_ERROR` | Falla el schema      | Datos inválidos                       | 400        |
+| `UNAUTHORIZED`     | Sin sesión           | Sesión requerida                      | 401        |
+| `FORBIDDEN`        | El rol no es `admin` | No tenés permiso para listar usuarios | 403        |
+| `INTERNAL_ERROR`   | Falla inesperada     | Error inesperado. Intentá de nuevo    | 500        |
 
 ```json
 {
@@ -69,9 +69,7 @@
     "code": "VALIDATION_ERROR",
     "message": "Datos inválidos",
     "fieldErrors": {
-      "pageSize": [
-        "Debe ser un entero entre 1 y 100"
-      ]
+      "pageSize": ["Debe ser un entero entre 1 y 100"]
     }
   }
 }

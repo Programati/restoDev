@@ -18,8 +18,11 @@ mi-proyecto/
 │   ├── Contratos_de_actions.md
 │   ├── Convenciones_de_archivos.md
 │   ├── Estructura_de_carpetas.md
+│   ├── Git_workflow.md
+│   ├── Reglas_de_negocio.md
 │   └── Stack_restoDev.md
-├── eslint.config.mjs · .prettierrc · tsconfig.json · vercel.json · vitest.config.ts · playwright.config.ts
+├── eslint.config.mjs · .prettierrc · .prettierignore · lint-staged.config.mjs · tsconfig.json · next.config.ts · pnpm-workspace.yaml · vercel.json · vitest.config.ts · playwright.config.ts
+├── PROGRESO.md · AGENTS.md
 ├── supabase/
 │   ├── migrations/20261108_users_profiles.sql
 │   └── functions/
