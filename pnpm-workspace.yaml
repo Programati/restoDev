@@ -1,6 +1,7 @@
 allowBuilds:
   sharp: false
   unrs-resolver: false
+  supabase: true
 
 # Cooldown: no instalar versiones publicadas hace menos de 3 días (en minutos)
 minimumReleaseAge: 4320
