@@ -39,7 +39,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          deleted_at: string | null
+          display_order: number
+          icon_name: string | null
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          display_order?: number
+          icon_name?: string | null
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          display_order?: number
+          icon_name?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
