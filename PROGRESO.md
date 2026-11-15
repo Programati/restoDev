@@ -75,10 +75,10 @@
 - [x] Contrato `docs/contracts/categories/createCategory.md` escrito
 - [x] Migración de `categories` aplicada al proyecto de pruebas, con RLS activo y política provisoria; `database.types.ts` regenerado
 - [x] `src/core/types/action-result.ts` (`ActionResult`, `ErrorCode`, `FieldErrors`) y `docs/contracts/errors.md`
-- [ ] Abrir el PR de `chore/env-validation` hacia `develop` (corre `pnpm check:full` antes)
-- [ ] Schema, servicio y action de `createCategory`
-- [ ] Resumen `docs/contracts/categories/categories.md` (entidad + tabla de Actions)
-- [ ] Nota de política RLS provisoria en `docs/database/modelo/categories.md` y en `createCategory.md`
+- [x] Abrir el PR de `chore/env-validation` hacia `develop` (corre `pnpm check:full` antes)
+- [x] Schema, servicio y action de `createCategory`
+- [x] Resumen `docs/contracts/categories/categories.md` (entidad + tabla de Actions)
+- [x] Nota de política RLS provisoria en `docs/database/modelo/categories.md` y en `createCategory.md`
 - [ ] Boilerplate de `create-next-app` sin limpiar
 
 ## Próximos pasos

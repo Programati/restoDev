@@ -53,13 +53,13 @@ Campos que **no** se reciben: `slug` (se genera a partir de `name`), `deleted_at
 
 ## Errores
 
-| code               | Cuándo                                                         | message                                | HTTP (API) |
-| ------------------ | -------------------------------------------------------------- | -------------------------------------- | ---------- |
-| `VALIDATION_ERROR` | Falla el schema (nombre vacío, `display_order` negativo, etc.) | Datos inválidos                        | 400        |
-| `UNAUTHORIZED`     | Sin sesión                                                     | Sesión requerida                       | 401        |
-| `FORBIDDEN`        | El rol no es `admin` (o RLS rechaza la escritura)              | No tenés permiso para crear categorías | 403        |
-| `CONFLICT`         | El `name` ya existe (incluso en una categoría dada de baja)    | Ya existe una categoría con ese nombre | 409        |
-| `INTERNAL_ERROR`   | Falla inesperada                                               | Error inesperado. Intentá de nuevo     | 500        |
+| code               | Cuándo                                                                     | message                                | HTTP (API) |
+| ------------------ | -------------------------------------------------------------------------- | -------------------------------------- | ---------- |
+| `VALIDATION_ERROR` | Falla el schema (nombre vacío, `display_order` negativo, etc.)             | Datos inválidos                        | 400        |
+| `UNAUTHORIZED`     | Sin sesión                                                                 | Sesión requerida                       | 401        |
+| `FORBIDDEN`        | RLS rechaza la escritura. (Cuando existan los roles: el rol no es `admin`) | No tenés permiso para crear categorías | 403        |
+| `CONFLICT`         | El `name` ya existe (incluso en una categoría dada de baja)                | Ya existe una categoría con ese nombre | 409        |
+| `INTERNAL_ERROR`   | Falla inesperada                                                           | Error inesperado. Intentá de nuevo     | 500        |
 
 ```json
 {
@@ -81,7 +81,7 @@ Campos que **no** se reciben: `slug` (se genera a partir de `name`), `deleted_at
 - La unicidad de `name` y `slug` la garantiza también la base (constraints `UNIQUE`). Si la inserción falla por violación de unicidad (condición de carrera), el Servicio la traduce a `CONFLICT`.
 - `updated_by` se completa con el `id` del usuario de la sesión.
 - La categoría se crea siempre con `deleted_at = null`.
-- RLS habilitado en `categories`; no se usa una política `TO authenticated` indiscriminada para escritura.
+- RLS habilitado en `categories`. **Provisorio:** hoy la política permite escritura a cualquier usuario autenticado; el rol `admin` se exigirá cuando se defina el modelo de roles (`TODO(roles)` en la Action).
 
 ## Efectos secundarios
 
