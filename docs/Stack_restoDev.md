@@ -19,7 +19,7 @@ Respetar cada ítem. No sustituir tecnologías ni agregar alternativas.
 ## 3. Supabase
 
 - [ ] Base de datos: PostgreSQL
-- [ ] Seguridad: RLS en todas las tablas
+- [ ] Seguridad: RLS en todas las tablas, más `GRANT` explícito a los roles que correspondan (ver `docs/database/supabase-cli.md`)
 - [ ] Auth: Supabase Auth con `@supabase/ssr` (cookies, Middleware)
 - [ ] Archivos: Supabase Storage
 - [ ] Tiempo real: Supabase Realtime

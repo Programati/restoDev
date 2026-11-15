@@ -133,3 +133,30 @@ El archivo está en `.prettierignore`. Si el esquema cambió, el cambio de tipos
 - [ ] Usuario de pruebas creado en Auth
 - [ ] `database.types.ts` regenerado y sin errores de `pnpm run typecheck`
 - [ ] `supabase/.temp/` ignorado por Git
+
+## Permisos de tabla (GRANT) en tablas nuevas
+
+En este proyecto las tablas creadas por migración **no reciben permisos automáticos** para los roles de la Data API (`anon`, `authenticated`, `service_role`): solo quedan con `REFERENCES`, `TRIGGER` y `TRUNCATE`. RLS por sí solo no alcanza: Postgres comprueba primero los permisos de tabla y recién después las políticas. Sin `GRANT`, toda consulta falla con `permission denied for table <tabla>` (código `42501`), que los Servicios reportan como `INTERNAL_ERROR`.
+
+**Regla:** toda migración que crea una tabla incluye, en el mismo archivo, RLS, políticas y `GRANT`.
+
+```sql
+alter table public.<tabla> enable row level security;
+-- políticas...
+grant select, insert, update on public.<tabla> to authenticated;
+```
+
+- Conceder solo lo que el flujo necesita. Sin `DELETE` en tablas con baja lógica.
+- No conceder nada a `anon` salvo que la tabla deba ser pública.
+- `service_role` hoy no tiene permisos; concedérselos solo cuando exista un cliente que lo use.
+
+**Cómo diagnosticarlo:**
+
+```sql
+select grantee, privilege_type
+from information_schema.role_table_grants
+where table_schema = 'public' and table_name = '<tabla>'
+  and grantee in ('anon', 'authenticated', 'service_role');
+```
+
+Caso real: `categories` se creó sin `GRANT` y `createCategory` devolvía `INTERNAL_ERROR`. Se corrigió con la migración `grant_categories_privileges`.

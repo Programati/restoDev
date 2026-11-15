@@ -129,6 +129,7 @@ En Settings → General: activar "Automatically delete head branches" (borra las
 - `develop` y ramas de trabajo → previews en Vercel.
 - Las migraciones de `supabase/migrations/` viajan en el mismo PR que el código que las usa. Si cambia el esquema, se regenera `src/core/types/database.types.ts` en ese mismo PR.
 - Las migraciones no se prueban contra la base de producción desde `develop`: usar un proyecto Supabase de pruebas o Supabase branching.
+- Toda migración que crea una tabla incluye RLS, políticas y `GRANT` a los roles necesarios.
 
 ## 9. Qué se versiona y qué no
 
