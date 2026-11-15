@@ -45,6 +45,13 @@
 - No conceder permisos de escritura indiscriminados mediante una política `TO authenticated`.
 - Definir políticas explícitas de lectura y gestión según los roles y permisos cuando se implemente ese modelo. Hasta entonces, mantener denegadas las operaciones no autorizadas.
 - La baja lógica debe pasar por un mecanismo que valide en la base de datos la ausencia de productos activos asociados, sin depender únicamente de la interfaz.
+- Conceder `SELECT`, `INSERT` y `UPDATE` a `authenticated` en la migración de la tabla. Sin `DELETE`: la única eliminación permitida es la baja lógica. RLS sin `GRANT` bloquea todo (ver `docs/database/supabase-cli.md`).
+
+> **Estado actual (provisorio):** mientras no exista el modelo de roles, la tabla tiene una
+> política RLS `TO authenticated` de lectura y escritura. Contradice la regla anterior y se
+> reemplaza por políticas que exijan rol `admin` (función `is_admin()`) al definir los roles.
+> Hasta entonces, la verificación de rol queda como `TODO(roles)` en las Actions. La baja
+> lógica tampoco valida en la base la ausencia de productos activos: se resuelve al crear `products`.
 
 ## Validaciones
 

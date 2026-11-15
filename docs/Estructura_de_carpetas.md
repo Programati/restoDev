@@ -36,7 +36,7 @@ mi-proyecto/
 │   │   └── createUser.schema.test.ts
 │   └── e2e/users.spec.ts
 └── src/
-    ├── middleware.ts
+    ├── proxy.ts
     ├── app/
     │   ├── layout.tsx
     │   ├── globals.css
