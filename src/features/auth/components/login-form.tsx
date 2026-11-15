@@ -34,7 +34,8 @@ export function LoginForm() {
       return
     }
 
-    router.replace("/")
+    // router.replace("/")
+    router.replace("/categories/new")
     router.refresh()
   }
 
