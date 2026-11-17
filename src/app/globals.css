@@ -1,15 +1,167 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* MARCA — base original: #D88918 naranja, #A65F08 naranja oscuro */
+  --marca-principal: #d88918;
+  --marca-hover: #a65f08;
+  --marca-activa: #874b07;
+  --marca-clara: #fff1d9;
+  --marca-borde: #ebc894;
+  --marca-resplandor: rgb(216 137 24 / 20%);
+  --texto-sobre-marca: #11100f;
+
+  /* NEUTROS — referencia: carbón #11100F, tinta #191715, crema #EAD8BA */
+  --carbon: #11100f;
+  --tinta: #191715;
+  --crema: #ead8ba;
+  --arena: #f7ebd4;
+  --humo: #9a8d7c;
+  --blanco: #ffffff;
+
+  /* SUPERFICIES Y TIPOGRAFÍA — modo claro, ideal para administración */
+  --fondo-pagina: #f7f7f8;
+  --fondo-superficie: #ffffff;
+  --fondo-elevado: #ffffff;
+  --fondo-secundario: #f1f1f3;
+  --fondo-hover: #f6f3ef;
+  --fondo-campo: #f8f8fa;
+  --fondo-campo-deshabilitado: #eeeef0;
+  --texto-principal: #191715;
+  --texto-secundario: #62605d;
+  --texto-terciario: #77746f;
+  --texto-deshabilitado: #9a9894;
+  --texto-inverso: #ffffff;
+  --borde-sutil: #ececef;
+  --borde-normal: #dcdce1;
+  --borde-fuerte: #b8b6b2;
+  --separador: #e9e9ed;
+  --foco: var(--marca-principal);
+  --foco-anillo: var(--marca-resplandor);
+  --superposicion: rgb(17 16 15 / 55%);
+  --sombra-suave: 0 6px 24px rgb(17 16 15 / 7%);
+  --sombra-elevada: 0 20px 60px rgb(17 16 15 / 16%);
+
+  /* ESTADOS — distintos al acento de marca */
+  --exito: #21734f;
+  --exito-fondo: #e9f6ef;
+  --exito-borde: #b9e3cd;
+  --advertencia: #97610d;
+  --advertencia-fondo: #fff4d9;
+  --advertencia-borde: #f0d49a;
+  --error: #b42332;
+  --error-fondo: #fff0f0;
+  --error-borde: #f5c4c8;
+  --informacion: #25649a;
+  --informacion-fondo: #eaf4fc;
+  --informacion-borde: #c4e0f5;
+
+  /* ACENTOS COMPLEMENTARIOS (no sustituyen semántica de los estados) */
+  --acento-oliva: #77804a;
+  --acento-terracota: #b46a49;
+  --acento-chocolate: #5a3829;
+  --acento-salvia: #a8b6a0;
+  --acento-mostaza: #d4ac52;
+
+  /* COMPONENTES — sólo referencian variables anteriores */
+  --boton-primario-fondo: var(--marca-principal);
+  --boton-primario-hover: var(--marca-hover);
+  --boton-primario-texto: var(--texto-sobre-marca);
+  --boton-secundario-fondo: var(--fondo-superficie);
+  --boton-secundario-texto: var(--texto-principal);
+  --boton-secundario-borde: var(--borde-normal);
+  --campo-fondo: var(--fondo-campo);
+  --campo-borde: var(--borde-normal);
+  --campo-borde-foco: var(--marca-principal);
+  --seleccion-fondo: var(--marca-clara);
+  --seleccion-texto: var(--texto-principal);
+  --casilla-activa: var(--marca-principal);
+  --interruptor-activo: var(--marca-principal);
+  --interruptor-inactivo: #c9c9ce;
+  --tabla-cabecera-fondo: var(--fondo-secundario);
+  --tabla-fila-hover: var(--fondo-hover);
+  --esqueleto-base: #e9e9eb;
+  --esqueleto-brillo: #f7f7f9;
+}
+
+/* SITIO PÚBLICO / EXPERIENCIA NOCTURNA — inspirada en la estética carbón. */
+.tema-oscuro {
+  --fondo-pagina: #0f0f0e;
+  --fondo-superficie: #191715;
+  --fondo-elevado: #25211d;
+  --fondo-secundario: #24211e;
+  --fondo-hover: #302922;
+  --fondo-campo: #211e1b;
+  --fondo-campo-deshabilitado: #2b2825;
+  --texto-principal: #f6ead6;
+  --texto-secundario: #d5c8b5;
+  --texto-terciario: #b3a795;
+  --texto-deshabilitado: #82786c;
+  --texto-inverso: #11100f;
+  --borde-sutil: #302c27;
+  --borde-normal: #494239;
+  --borde-fuerte: #75695d;
+  --separador: #38332e;
+  --superposicion: rgb(0 0 0 / 68%);
+  --sombra-suave: 0 8px 30px rgb(0 0 0 / 24%);
+  --sombra-elevada: 0 24px 70px rgb(0 0 0 / 48%);
+  --marca-clara: #382a17;
+  --marca-borde: #745121;
+  --esqueleto-base: #24211e;
+  --esqueleto-brillo: #312b25;
+  --exito: #7ad3a8;
+  --exito-fondo: #173a2b;
+  --exito-borde: #2e654c;
+  --advertencia: #f1c477;
+  --advertencia-fondo: #42301b;
+  --advertencia-borde: #6f5128;
+  --error: #ffa2a9;
+  --error-fondo: #45252b;
+  --error-borde: #75434a;
+  --informacion: #9dcdfc;
+  --informacion-fondo: #1b3144;
+  --informacion-borde: #345a79;
+  --interruptor-inactivo: #5d5751;
+}
+
+/* OPCIÓN DE IDENTIDAD VERDE: basta cambiar un atributo. */
+[data-marca="verde"] {
+  --marca-principal: #287a54;
+  --marca-hover: #206342;
+  --marca-activa: #194c33;
+  --marca-clara: #e7f4ec;
+  --marca-borde: #b6dfc6;
+  --marca-resplandor: rgb(40 122 84 / 20%);
+  --texto-sobre-marca: #ffffff;
+}
+
+[data-marca="verde"].tema-oscuro,
+[data-marca="verde"] .tema-oscuro {
+  --marca-clara: #193a2b;
+  --marca-borde: #34694d;
+}
+
+/* OPCIÓN DE IDENTIDAD TERRACOTA: más gastronómica y artesanal. */
+[data-marca="terracota"] {
+  --marca-principal: #b75b3a;
+  --marca-hover: #93452b;
+  --marca-activa: #753621;
+  --marca-clara: #faede6;
+  --marca-borde: #e8bdaa;
+  --marca-resplandor: rgb(183 91 58 / 20%);
+  --texto-sobre-marca: #ffffff;
+}
+
+[data-marca="terracota"].tema-oscuro,
+[data-marca="terracota"] .tema-oscuro {
+  --marca-clara: #40261d;
+  --marca-borde: #8f5038;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --font-sans: var(--font-outfit);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +174,6 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+
+  font-family: var(--font-outfit), sans-serif;
 }
