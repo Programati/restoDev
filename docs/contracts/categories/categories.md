@@ -3,7 +3,7 @@
 ## Entidad
 
 Categoría de productos del menú. Modelo de datos, constraints y reglas en
-[`docs/database/modelo/categories.md`](../../database/modelo/categories.md).
+[`docs/database/model/categories.md`](../../database/model/categories.md).
 
 - Tabla: `categories`
 - Eliminación: solo **baja lógica** (`deleted_at`); nunca borrado físico desde el flujo de negocio.
@@ -12,10 +12,12 @@ Categoría de productos del menú. Modelo de datos, constraints y reglas en
 
 ## Actions
 
-| Action           | Descripción                                    | Permiso                                 | Equivalente API              | Ficha                                      | Estado                         |
-| ---------------- | ---------------------------------------------- | --------------------------------------- | ---------------------------- | ------------------------------------------ | ------------------------------ |
-| `createCategory` | Crea una categoría                             | Sesión activa, rol `admin` (provisorio) | `POST /api/categories → 201` | [`createCategory.md`](./createCategory.md) | Implementada                   |
-| `getCategory`    | Obtiene una categoría por `id`                 | Pendiente                               | Pendiente                    | —                                          | Sin ficha                      |
-| `listCategories` | Lista categorías                               | Pendiente                               | Pendiente                    | —                                          | Sin ficha                      |
-| `updateCategory` | Modifica una categoría                         | Pendiente                               | Pendiente                    | —                                          | Sin ficha                      |
-| `deleteCategory` | Baja lógica (rechaza si hay productos activos) | Pendiente                               | Pendiente                    | —                                          | Sin ficha; requiere `products` |
+| Action                 | Descripción                                    | Permiso actual / previsto             | Equivalente API                            | Ficha                                      | Estado                                                      |
+| ---------------------- | ---------------------------------------------- | ------------------------------------- | ------------------------------------------ | ------------------------------------------ | ----------------------------------------------------------- |
+| `createCategoryAction` | Crea una categoría                             | Sesión activa / rol `admin` pendiente | `POST /api/categories → 201` (planificado) | [`createCategory.md`](./createCategory.md) | Action implementada; Route Handler y rol `admin` pendientes |
+| `getCategory`          | Obtiene una categoría por `id`                 | Pendiente                             | Pendiente                                  | —                                          | Sin ficha                                                   |
+| `listCategories`       | Lista categorías                               | Pendiente                             | Pendiente                                  | —                                          | Sin ficha                                                   |
+| `updateCategory`       | Modifica una categoría                         | Pendiente                             | Pendiente                                  | —                                          | Sin ficha                                                   |
+| `deleteCategory`       | Baja lógica (rechaza si hay productos activos) | Pendiente                             | Pendiente                                  | —                                          | Sin ficha; requiere `products`                              |
+
+La definición funcional de creación está en la [Historia de Usuario](../../historias_de_usuario/categories/crear_categoria.md).
