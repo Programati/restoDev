@@ -15,13 +15,29 @@ Sin campos.
 
 `ActionResult<null>`
 
-{ "ok": true, "data": null, "message": "Sesión cerrada" }
+```json
+{
+  "ok": true,
+  "data": null,
+  "message": "Sesión cerrada"
+}
+```
 
 ## Errores
 
 | code             | Cuándo                 | message                            | HTTP (API) |
 | ---------------- | ---------------------- | ---------------------------------- | ---------- |
 | `INTERNAL_ERROR` | Falla `auth.signOut()` | Error inesperado. Intentá de nuevo | 500        |
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Error inesperado. Intentá de nuevo"
+  }
+}
+```
 
 ## Efectos secundarios
 
@@ -30,4 +46,16 @@ Sin campos.
 
 ## Flujo
 
-Front → Action → Service → `supabase.auth.signOut()` → ActionResult
+```mermaid
+sequenceDiagram
+  participant Front
+  participant Action
+  participant Service
+  participant Supabase
+  Front->>Action: logoutAction()
+  Action->>Service: logout(supabase)
+  Service->>Supabase: auth.signOut()
+  Supabase-->>Service: ok | error
+  Service-->>Action: void | ServiceError (INTERNAL_ERROR)
+  Action-->>Front: ActionResult<null>
+```
