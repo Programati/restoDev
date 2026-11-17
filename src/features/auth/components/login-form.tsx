@@ -17,7 +17,8 @@ export function LoginForm() {
     setError(null)
     setPending(true)
 
-    const formData = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const formData = new FormData(form)
     const email = String(formData.get("email") ?? "")
     const password = String(formData.get("password") ?? "")
 
@@ -34,8 +35,10 @@ export function LoginForm() {
       return
     }
 
-    // router.replace("/")
-    router.replace("/categories/new")
+    // Éxito: dejar el formulario limpio para cuando se vuelva a /login.
+    setPending(false)
+    form.reset()
+    router.replace("/admin")
     router.refresh()
   }
 

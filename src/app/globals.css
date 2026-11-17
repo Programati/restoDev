@@ -164,11 +164,23 @@
   --font-sans: var(--font-outfit);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Tablas legibles por defecto. TODO(front): reemplazar por <Table> de shadcn/ui. */
+table {
+  @apply w-full border-collapse text-sm;
+}
+
+th,
+td {
+  @apply border-b border-gray-200 px-3 py-2 text-left;
+}
+
+th {
+  @apply font-medium text-gray-600;
+}
+
+/* Números alineados en columnas (importes, cantidades). */
+td {
+  font-variant-numeric: tabular-nums;
 }
 
 body {

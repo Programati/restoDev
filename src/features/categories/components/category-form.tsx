@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, type SubmitEvent } from "react"
+import { useEffect, useState, useTransition, type SubmitEvent } from "react"
 
 import { createCategoryAction } from "@/actions/categories/createCategory.action"
 import type { ActionResult } from "@/core/types/action-result"
@@ -25,6 +25,22 @@ export function CategoryForm() {
   const [pending, startTransition] = useTransition()
 
   const fieldErrors = result && !result.ok ? result.error.fieldErrors : undefined
+
+  // DefaultReset
+  function resetForm() {
+    setName("")
+    setIconName("")
+    setDisplayOrder("")
+    setActive(true)
+    setResult(null)
+  }
+
+  // Al ocultarse la página (navegar a otra ruta) se ejecuta el cleanup
+  useEffect(() => {
+    return () => {
+      resetForm()
+    }
+  }, [])
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
