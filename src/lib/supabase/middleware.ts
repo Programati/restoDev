@@ -1,15 +1,14 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { env } from "@/lib/env"
-import type { Database } from "@/core/types/database.types"
 
-// Rutas de página accesibles sin sesión
+// Rutas públicas con prefijo. "/" se compara aparte, de forma exacta.
 const PUBLIC_PATHS = ["/login"]
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabase = createServerClient<Database>(
+  const supabase = createServerClient(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
@@ -28,24 +27,33 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  // No poner código entre createServerClient y getUser: esta llamada es la que
-  // valida el token con Supabase y dispara el refresco de las cookies.
+  // No poner código entre createServerClient y getUser(): refresca la sesión.
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
-  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path))
+  const isPublic = pathname === "/" || PUBLIC_PATHS.some((path) => pathname.startsWith(path))
 
-  if (!user && !isPublic) {
+  // Redirige conservando las cookies de sesión que Supabase pudo haber refrescado.
+  function redirectTo(path: string) {
     const url = request.nextUrl.clone()
-    url.pathname = "/login"
-    const redirectResponse = NextResponse.redirect(url)
-    // Conservar las cookies que pudo haber renovado Supabase
-    supabaseResponse.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie))
-    return redirectResponse
+    url.pathname = path
+    url.search = ""
+    const response = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie))
+    return response
   }
 
-  // Devolver siempre este objeto: lleva las cookies actualizadas al navegador
+  // Sin sesión en una ruta privada → login
+  if (!user && !isPublic) {
+    return redirectTo("/login")
+  }
+
+  // Con sesión, la home pública y el login no tienen sentido → /admin
+  if (user && (pathname === "/" || pathname === "/login")) {
+    return redirectTo("/admin")
+  }
+
   return supabaseResponse
 }
