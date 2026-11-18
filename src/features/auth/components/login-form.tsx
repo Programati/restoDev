@@ -3,10 +3,8 @@
 import { useRouter } from "next/navigation"
 import { useState, type SubmitEvent } from "react"
 
-import { createClient } from "@/lib/supabase/client"
+import { loginAction } from "@/actions/auth/login.action"
 
-// TODO(auth): reemplazar este login directo con el cliente de navegador por `login.action.ts`
-// (contrato, schema y servicio) cuando se arme el módulo auth.
 export function LoginForm() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
@@ -22,15 +20,9 @@ export function LoginForm() {
     const email = String(formData.get("email") ?? "")
     const password = String(formData.get("password") ?? "")
 
-    const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (signInError) {
-      setError(
-        signInError.code === "invalid_credentials"
-          ? "Email o contraseña incorrectos"
-          : "No se pudo iniciar sesión. Intentá de nuevo",
-      )
+    const result = await loginAction({ email, password })
+    if (!result.ok) {
+      setError(result.error.message)
       setPending(false)
       return
     }

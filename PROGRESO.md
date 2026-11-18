@@ -1,13 +1,14 @@
 # PROGRESO
 
 > Leer este archivo al inicio de cada chat. Reglas y convenciones detalladas en `docs/` y `AGENTS.md`.
-> Última actualización: 2026-11-16
+> Última actualización: 2026-11-17
 
 ## Proyecto
 
 - **Nombre:** resto-app (`restoDev`)
-- **Rama actual:** `chore/clean-boilerplate` (base: `develop`)
-- **Trabajo sin PR mergeado:** limpieza del boilerplate, layout base, home pública, `/admin`, logout y arreglo del formulario de login (todo en la rama actual, con commits separados)
+- **Rama actual:** `feature/auth-login-action` (base: `develop`)
+- **Trabajo sin commit ni PR:** separación del login en Action, Schema, Servicio y tipos; actualización del formulario y documentación de contratos `auth`
+- **Trabajo anterior sin PR mergeado:** ya no aplica a la rama actual
 - **Ya en `develop`:** `chore/env-validation` (variables de entorno, clientes Supabase, `proxy.ts`, `ActionResult`, migración de `categories`), login mínimo y `createCategory` (schema, servicio, action, formulario, migración de GRANT)
 - **Gestor:** pnpm 12.11.2 · Node 24.22.1
 
@@ -50,6 +51,7 @@
 - `categories`: constraints `categories_slug_key` y `categories_name_key` (verificadas). El servicio `createCategory` detecta la colisión de slug con `error.message.includes("slug")`: si se renombran las constraints, ajustarlo
 - `createCategory` implementado: `core/schemas/categories/createCategory.schema.ts`, `core/types/categories/category.types.ts`, `core/services/categories/createCategory.service.ts` (slug con sufijo numérico, reintento si otra petición ocupa el slug, traduce `23505` a `CONFLICT` y `42501` a `FORBIDDEN`) y `actions/categories/createCategory.action.ts` (exporta `createCategoryAction`)
 - `logout` implementado: contrato `docs/contracts/auth/logout.md`, `core/services/auth/logout.service.ts` (+ `index.ts`) y `actions/auth/logout.action.ts` (exporta `logoutAction`, devuelve `ActionResult<null>`; sin schema porque no recibe datos). El botón `features/auth/components/logout-button.tsx` llama a la Action y, si sale bien, hace `router.push("/")` y `router.refresh()`
+- `login` separado del componente: contrato `docs/contracts/auth/login.md`, resumen `docs/contracts/auth/auth.md`, `core/schemas/auth/login.schema.ts` (+ `index.ts`), `core/types/auth/auth.types.ts`, `core/services/auth/login.service.ts` (+ exportación en `index.ts`) y `actions/auth/login.action.ts` (exporta `loginAction`). Zod valida email y contraseña; el Servicio traduce credenciales inválidas a `UNAUTHORIZED` y otras fallas a `INTERNAL_ERROR`. El formulario ya llama a la Action y conserva `form.reset()` y la navegación a `/admin` en caso de éxito
 - Convenciones de librerías: en Zod 4 usar `z.flattenError(error).fieldErrors` y `{ error: "..." }` en los mensajes; en React 19 tipar el submit con `SubmitEvent<HTMLFormElement>` (importado de `react`), no `FormEvent` (deprecado)
 - **`cacheComponents` conserva el estado de las páginas ya visitadas** (quedan ocultas, no se desmontan). En formularios, al terminar con éxito hay que apagar `pending` y limpiar los campos (`form.reset()`, guardando antes `const form = event.currentTarget`, porque tras un `await` es `null`); si no, al volver a la pantalla aparece cargada y "cargando". Evitar también `new Date()` en Server Components (puede romper el build con `cacheComponents`)
 - Caché de tipos: si se borra o mueve un `page.tsx`, `pnpm check` puede fallar con `.next/dev/types/validator.ts` referenciando el archivo viejo. Solución: parar `pnpm dev`, borrar `.next` y volver a correr
@@ -62,12 +64,12 @@
   - Solo puede haber un `page.tsx` por ruta: si dos grupos resuelven a la misma ruta, el build falla ("two parallel pages")
 - Estilos: `globals.css` mínimo (Tailwind, fuente del sistema, tablas legibles y números con `tabular-nums`); `layout.tsx` raíz con `lang="es"` y metadata de `restoDev`. La guía `docs/Guia_front.md` todavía no existe; hay `TODO(front)` en `globals.css` y `layout.tsx`
 - Boilerplate de `create-next-app` eliminado (`page.tsx`, estilos, `public/*.svg`); se conserva `src/app/favicon.ico`
-- Login **temporal**: `src/app/(auth)/login/page.tsx` + `src/features/auth/components/login-form.tsx`, con `signInWithPassword` desde el cliente de navegador (inputs no controlados, lee `FormData`). Tras el éxito apaga `pending`, hace `form.reset()` y `router.replace("/admin")` + `router.refresh()`. Marcado con `TODO(auth)`; se reemplaza por `login.action.ts` (contrato, schema y servicio) al armar el módulo auth
+- Login: `src/app/(auth)/login/page.tsx` + `src/features/auth/components/login-form.tsx`. El formulario llama a `loginAction` y ya no ejecuta `signInWithPassword` en el navegador. Tras el éxito apaga `pending`, hace `form.reset()` y `router.replace("/admin")` + `router.refresh()`
 - Formulario `src/app/(dashboard)/categories/new/page.tsx` + `src/features/categories/components/category-form.tsx`: usa `noValidate` para que valide el servidor; campo vacío = no enviado (`icon_name` → `null`, `display_order` → se omite)
 
 ## Docs existentes (`docs/`)
 
-`Stack_restoDev` · `Estructura_de_carpetas` · `Convenciones_de_archivos` · `Contratos_de_actions` · `Reglas_de_negocio` · `Git_workflow` · `contracts/` (`_template`, `errors`, `users/`, `categories/categories`, `categories/createCategory`, `auth/logout`) · `database/` (`supabase-cli` con la sección de GRANT, modelo de `categories`)
+`Stack_restoDev` · `Estructura_de_carpetas` · `Convenciones_de_archivos` · `Contratos_de_actions` · `Reglas_de_negocio` · `Guia_de_desarrollo_de_funcionalidades` · `Git_workflow` · `contracts/` (`_template`, `errors`, `users/`, `categories/categories`, `categories/createCategory`, `auth/auth`, `auth/login`, `auth/logout`) · `database/` (`supabase-cli` con la sección de GRANT, modelo de `categories`)
 
 ## Estado
 
@@ -111,22 +113,27 @@
 - [x] Arreglo del formulario de login (estado conservado por `cacheComponents`)
 - [x] Pruebas manuales de `createCategory` realizadas por el usuario; reporta que funcionan correctamente
 - [ ] Registrar qué casos individuales se probaron (conflicto, colisión de slug, validaciones, `UNAUTHORIZED`)
-- [ ] Abrir el PR de la rama actual hacia `develop`; correr `pnpm check:full` antes
+- [ ] Crear el commit de los cambios actuales en `feature/auth-login-action`
+- [ ] Subir `feature/auth-login-action` y abrir el PR hacia `develop`
+- [ ] Correr el flujo de revisión y squash del PR una vez creado
+- [x] `pnpm check:full` del login separado aprobado antes del commit (`format:check`, `lint`, `typecheck` y `build`)
 - [ ] Actualizar `docs/Estructura_de_carpetas.md` con los grupos `(public)`, `(dashboard)/admin`, `components/layout/*`, `actions/auth`, `core/services/auth` y `features/auth`
 - [ ] Crear `docs/Guia_front.md`; el archivo todavía no existe aunque se lo referencia como documentación del equipo de Front
 
 ## Próximos pasos
 
-1. Abrir el PR de la rama actual hacia `develop` (squash): título que resuma los temas y descripción que liste cada uno. Correr `pnpm check:full` antes
-2. Registrar los casos individuales cubiertos al probar `createCategory` y sus resultados
-3. Resto del CRUD de `categories`: `listCategories` primero (hoy no hay forma de ver las categorías creadas ni pantalla `/categories`), luego `getCategory`, `updateCategory` y `deleteCategory` (baja lógica; necesita `products` para validar que no haya productos activos), cada uno con su contrato antes del código
-4. Modelo y migración de `products` (con `category_id` apuntando a `categories`), **incluyendo RLS, políticas y GRANT en la misma migración**; contratos y CRUD
-5. Módulo `auth`: contrato `login`, schema, servicio y action; reemplazar el login temporal (`TODO(auth)`)
-6. Planificar auth y roles (ver decisiones abiertas): `profiles`, rol, función `is_admin()` y políticas RLS definitivas; que `/admin` solo se muestre a administradores
-7. Front: crear `docs/Guia_front.md`, instalar y configurar shadcn/ui, `next-themes`, Sonner y TanStack Query, y reemplazar los estilos Tailwind planos de los formularios y los headers
-8. Crear el resto de la estructura de `src/` según `docs/Estructura_de_carpetas.md`
-9. Agregar CI en PRs: `format:check` + `lint` + `typecheck` + `build` (los mismos comandos de `pnpm check:full`)
-10. Agregar tests (Vitest) cuando exista lógica de negocio y sumarlos a `check`
+1. Revisar el diff actual, crear el commit de login autenticado y subir la rama `feature/auth-login-action`
+2. Abrir el PR hacia `develop` (squash), con título `feat(auth): add login action and service`, descripción y verificación
+3. Revisar/aprobar el PR y mergearlo con squash
+4. Registrar los casos individuales cubiertos al probar `createCategory` y sus resultados
+5. Resto del CRUD de `categories`: `listCategories` primero (hoy no hay forma de ver las categorías creadas ni pantalla `/categories`), luego `getCategory`, `updateCategory` y `deleteCategory` (baja lógica; necesita `products` para validar que no haya productos activos), cada uno con su contrato antes del código
+6. Modelo y migración de `products` (con `category_id` apuntando a `categories`), **incluyendo RLS, políticas y GRANT en la misma migración**; contratos y CRUD
+7. Completar módulos pendientes de `auth`: consolidar roles y proteger operaciones según permisos
+8. Planificar auth y roles (ver decisiones abiertas): `profiles`, rol, función `is_admin()` y políticas RLS definitivas; que `/admin` solo se muestre a administradores
+9. Front: crear `docs/Guia_front.md`, instalar y configurar shadcn/ui, `next-themes`, Sonner y TanStack Query, y reemplazar los estilos Tailwind planos de los formularios y los headers
+10. Crear el resto de la estructura de `src/` según `docs/Estructura_de_carpetas.md`
+11. Agregar CI en PRs: `format:check` + `lint` + `typecheck` + `build` (los mismos comandos de `pnpm check:full`)
+12. Agregar tests (Vitest) cuando exista lógica de negocio y sumarlos a `check`
 
 ## Decisiones abiertas
 
@@ -140,30 +147,33 @@
 - El registro en `audit_logs` queda pendiente hasta definir el mecanismo de auditoría
 - El contrato `createCategory` fija límites propios (`name` 2–80 caracteres, `icon_name` 1–50) que `categories.md` no define; confirmar o ajustar
 - Nombre de las Actions: el código exporta `createCategoryAction` y `logoutAction`, pero las fichas y los diagramas dicen `createCategory(input)` y `logout`. Alinear las fichas (o los nombres) para que no queden desfasados
-- Login temporal con el cliente de navegador se aparta del flujo "Server Actions → Servicios". Aceptado como atajo hasta armar el módulo `auth`
+- El login ya usa el flujo "Server Actions → Servicios"; las otras funcionalidades de `auth` y el modelo de roles siguen pendientes
 - La navegación del header solo tiene "Crear categoría" y "Salir"; se amplía a medida que existan pantallas (lo define Front)
 
 ## Registro de cambios
 
-| Fecha      | Cambio                                                                                                           |
-| ---------- | ---------------------------------------------------------------------------------------------------------------- |
-| 2026-11-10 | Archivo creado                                                                                                   |
-| 2026-11-10 | Setup de calidad: Prettier, Husky, lint-staged; `.gitignore` ajustado                                            |
-| 2026-11-10 | Setup commiteado en `chore/project-setup`; PR abierto hacia `develop`                                            |
-| 2026-11-10 | Scripts `check` y `check:full`; docs actualizados con el setup de calidad                                        |
-| 2026-11-12 | PR de `chore/project-setup` aprobado y mergeado en `develop`                                                     |
-| 2026-11-12 | Supabase CLI instalada, proyecto vinculado, usuario de pruebas creado y tipos regenerados                        |
-| 2026-11-12 | Guía `docs/database/supabase-cli.md`; PR de `chore/supabase-cli-setup` abierto hacia `develop`                   |
-| 2026-11-13 | Contrato `createCategory` escrito                                                                                |
-| 2026-11-14 | `.env.example` y validación de variables con Zod; clientes Supabase y `proxy.ts` (rama `chore/env-validation`)   |
-| 2026-11-14 | Migración de `categories` con RLS provisoria aplicada con `db push --remote`; tipos regenerados                  |
-| 2026-11-14 | `ActionResult`, `ErrorCode` y catálogo `docs/contracts/errors.md`                                                |
-| 2026-11-14 | Schema, tipos, servicio, `ServiceError` y action de `createCategory`; resumen del módulo y nota de RLS           |
-| 2026-11-14 | Página `/login` mínima (temporal) y formulario `/categories/new`                                                 |
-| 2026-11-14 | `INTERNAL_ERROR` al crear categorías: faltaba GRANT. Migración `grant_categories_privileges` y regla documentada |
-| 2026-11-16 | PR de `chore/env-validation`, login y `createCategory` aceptados y mergeados en `develop`                        |
-| 2026-11-16 | Boilerplate eliminado, estilos globales mínimos, layout base y `docs/Guia_front.md`                              |
-| 2026-11-16 | Home pública `/`, pantalla `/admin` y `proxy.ts` actualizado (`/` pública, redirección a `/admin` con sesión)    |
-| 2026-11-16 | Logout: contrato, servicio, action y botón "Salir"                                                               |
-| 2026-11-16 | Login: se limpia el formulario y `pending` tras el éxito (estado conservado por `cacheComponents`)               |
-| 2026-11-16 | Estado actualizado: rama actual, pruebas manuales reportadas y documentación pendiente verificada                |
+| Fecha      | Cambio                                                                                                            |
+| ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| 2026-11-10 | Archivo creado                                                                                                    |
+| 2026-11-10 | Setup de calidad: Prettier, Husky, lint-staged; `.gitignore` ajustado                                             |
+| 2026-11-10 | Setup commiteado en `chore/project-setup`; PR abierto hacia `develop`                                             |
+| 2026-11-10 | Scripts `check` y `check:full`; docs actualizados con el setup de calidad                                         |
+| 2026-11-12 | PR de `chore/project-setup` aprobado y mergeado en `develop`                                                      |
+| 2026-11-12 | Supabase CLI instalada, proyecto vinculado, usuario de pruebas creado y tipos regenerados                         |
+| 2026-11-12 | Guía `docs/database/supabase-cli.md`; PR de `chore/supabase-cli-setup` abierto hacia `develop`                    |
+| 2026-11-13 | Contrato `createCategory` escrito                                                                                 |
+| 2026-11-14 | `.env.example` y validación de variables con Zod; clientes Supabase y `proxy.ts` (rama `chore/env-validation`)    |
+| 2026-11-14 | Migración de `categories` con RLS provisoria aplicada con `db push --remote`; tipos regenerados                   |
+| 2026-11-14 | `ActionResult`, `ErrorCode` y catálogo `docs/contracts/errors.md`                                                 |
+| 2026-11-14 | Schema, tipos, servicio, `ServiceError` y action de `createCategory`; resumen del módulo y nota de RLS            |
+| 2026-11-14 | Página `/login` mínima (temporal) y formulario `/categories/new`                                                  |
+| 2026-11-14 | `INTERNAL_ERROR` al crear categorías: faltaba GRANT. Migración `grant_categories_privileges` y regla documentada  |
+| 2026-11-16 | PR de `chore/env-validation`, login y `createCategory` aceptados y mergeados en `develop`                         |
+| 2026-11-16 | Boilerplate eliminado, estilos globales mínimos, layout base y `docs/Guia_front.md`                               |
+| 2026-11-16 | Home pública `/`, pantalla `/admin` y `proxy.ts` actualizado (`/` pública, redirección a `/admin` con sesión)     |
+| 2026-11-16 | Logout: contrato, servicio, action y botón "Salir"                                                                |
+| 2026-11-16 | Login: se limpia el formulario y `pending` tras el éxito (estado conservado por `cacheComponents`)                |
+| 2026-11-16 | Estado actualizado: rama actual, pruebas manuales reportadas y documentación pendiente verificada                 |
+| 2026-11-17 | Login separado: contrato `auth/login`, schema Zod, tipos, servicio y Server Action; el formulario usa la Action   |
+| 2026-11-17 | Resumen de contratos `docs/contracts/auth/auth.md` agregado y documentación obsoleta del login temporal corregida |
+| 2026-11-17 | `pnpm check:full` aprobado para los cambios de login; commit y PR todavía pendientes de ejecución por el usuario  |
