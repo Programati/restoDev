@@ -1,3 +1,4 @@
 export { createCategory } from "./createCategory.service"
 export { listCategories } from "./listCategories.service"
 export { getCategory } from "./getCategory.service"
+export { updateCategory } from "./updateCategory.service"
