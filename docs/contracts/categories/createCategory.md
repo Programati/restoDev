@@ -13,6 +13,30 @@ están en la [Historia de Usuario](../../historias_de_usuario/categories/crear_c
 Los códigos HTTP de esta ficha describen el Route Handler planificado; la Server Action no devuelve
 códigos HTTP.
 
+## Uso desde el front
+
+| Import                 | Ruta                                              | Para qué                                                                                     |
+| ---------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `createCategoryAction` | `src/actions/categories/createCategory.action.ts` | Se llama desde el formulario o el hook de mutación con el input de la sección Input          |
+| `ActionResult<T>`      | `src/core/types/action-result.ts`                 | Tipa la respuesta; se discrimina por `ok` para leer `data` o `error` (`code`, `fieldErrors`) |
+| `Category`             | `src/core/types/categories/category.types.ts`     | Tipo de `data` en el caso de éxito (`ActionResult<Category>`)                                |
+
+**Por qué solo esto:** el front consume la Action y los tipos de su resultado. El schema Zod y el
+Servicio pertenecen al back: importarlos en el cliente duplicaría reglas y arrastraría código de
+servidor. Si el formulario valida antes de enviar, es solo una ayuda de experiencia; la validación
+real la hacen la Action y la base.
+
+```tsx
+const result = await createCategoryAction(input)
+
+if (!result.ok) {
+  // result.error.code, result.error.message, result.error.fieldErrors?
+  return
+}
+
+// result.data: Category
+```
+
 ## Input
 
 | Campo           | Tipo             | Reglas                                                                                                                                                   | Requerido |
@@ -87,7 +111,7 @@ Campos que **no** se reciben: `slug` (se genera a partir de `name`), `deleted_at
 - `updated_by` se completa con el `id` del usuario de la sesión.
 - La categoría se crea siempre con `deleted_at = null`.
 - RLS está habilitado en `categories`. **Actual:** la política permite acceso a cualquier usuario autenticado y la Action comprueba que exista una sesión. **Pendiente:** exigir rol `admin` cuando se defina e implemente el modelo de roles (`TODO(roles)` en la Action).
-- La Action valida los datos con Zod. La base garantiza las constraints actualmente definidas; los límites de longitud del nombre e ícono aún no están replicados como constraints de base de datos.
+- La Action valida los datos con Zod y la base replica las mismas reglas con constraints `CHECK` (migración `20261118224842_categories_length_checks.sql`): `name` de 2–80 caracteres tras `btrim`, `icon_name` de 1–50 caracteres si no es `null` y `slug` de hasta 100 caracteres. Así los datos también quedan protegidos ante escrituras que no pasan por la Action.
 - El Servicio reintenta hasta tres veces si una colisión concurrente ocupa el `slug`; si no logra insertarlo tras esos intentos, devuelve `INTERNAL_ERROR`.
 
 ## Validación por capa
@@ -96,9 +120,9 @@ Campos que **no** se reciben: `slug` (se genera a partir de `name`), `deleted_at
   para `display_order` y booleano para `active`, además de los defaults indicados en el input.
 - **Servicio y base de datos:** generación y resolución de colisiones del `slug`; unicidad de `name`
   y `slug`.
-- **Base de datos:** también comprueba que `name` no esté vacío, que `slug` tenga el formato
-  permitido y que `display_order` no sea negativo. Los límites de longitud del nombre e ícono aún
-  no están replicados como constraints de BD.
+- **Base de datos:** también comprueba el formato del `slug` (y su largo máximo de 100), que
+  `display_order` no sea negativo y los límites de longitud de `name` (2–80, tras recortar) e
+  `icon_name` (1–50).
 
 ## Efectos secundarios
 
