@@ -1,109 +1,142 @@
 # Estructura de Carpetas
 
 ```
-mi-proyecto/
-├── .husky/pre-commit
+restoDev/
+├── .husky/
+│   └── pre-commit
 ├── docs/
 │   ├── contracts/
-│   │   ├── users/
-│   │   │   ├── createUser.md
-│   │   │   ├── deleteUser.md
-│   │   │   ├── getUser.md
-│   │   │   ├── listUsers.md
-│   │   │   ├── updateUser.md
-│   │   │   └── users.md
-│   │   ├── _template.md
-│   │   └── errors.md
-│   │
+│   │   ├── auth/
+│   │   │   ├── Contract_auth.md
+│   │   │   ├── Contract_login.md
+│   │   │   └── Contract_logout.md
+│   │   ├── categories/
+│   │   │   ├── Contract_categories.md
+│   │   │   ├── Contract_createCategory.md
+│   │   │   ├── Contract_getCategory.md
+│   │   │   ├── Contract_listCategories.md
+│   │   │   └── Contract_updateCategory.md
+│   │   ├── Contract_errors.md
+│   │   └── Contract_template.md
+│   ├── database/
+│   │   ├── model/
+│   │   │   ├── Model_category.md
+│   │   │   └── Model_template.md
+│   │   └── supabase-cli.md
+│   ├── historias_de_usuario/
+│   │   ├── categories/
+│   │   │   ├── HU_actualizar_categoria.md
+│   │   │   ├── HU_crear_categoria.md
+│   │   │   ├── HU_eliminar_categoria.md
+│   │   │   ├── HU_listar_categoria.md
+│   │   │   └── HU_obtener_categoria.md
+│   │   └── HU_template.md
 │   ├── Contratos_de_actions.md
 │   ├── Convenciones_de_archivos.md
 │   ├── Estructura_de_carpetas.md
 │   ├── Git_workflow.md
+│   ├── Guia_de_desarrollo_de_funcionalidades.md
 │   ├── Reglas_de_negocio.md
 │   └── Stack_restoDev.md
-├── eslint.config.mjs · .prettierrc · .prettierignore · lint-staged.config.mjs · tsconfig.json · next.config.ts · pnpm-workspace.yaml · vercel.json · vitest.config.ts · playwright.config.ts
-├── PROGRESO.md · AGENTS.md
+├── src/
+│   ├── actions/
+│   │   ├── auth/
+│   │   │   ├── login.action.ts
+│   │   │   └── logout.action.ts
+│   │   └── categories/
+│   │       ├── createCategory.action.ts
+│   │       ├── getCategory.action.ts
+│   │       ├── listCategories.action.ts
+│   │       └── updateCategory.action.ts
+│   ├── app/
+│   │   ├── (auth)/
+│   │   │   └── login/
+│   │   │       └── page.tsx
+│   │   ├── (dashboard)/
+│   │   │   ├── admin/
+│   │   │   │   └── page.tsx
+│   │   │   ├── categories/
+│   │   │   │   └── new/
+│   │   │   │       └── page.tsx
+│   │   │   └── layout.tsx
+│   │   ├── api/
+│   │   │   └── categories/
+│   │   │       └── route.ts
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   └── layout/
+│   │       ├── public-header.tsx
+│   │       ├── site-footer.tsx
+│   │       └── site-header.tsx
+│   ├── core/
+│   │   ├── schemas/
+│   │   │   ├── auth/
+│   │   │   │   ├── index.ts
+│   │   │   │   └── login.schema.ts
+│   │   │   └── categories/
+│   │   │       ├── createCategory.schema.ts
+│   │   │       ├── getCategory.schema.ts
+│   │   │       ├── index.ts
+│   │   │       ├── listCategories.schema.ts
+│   │   │       └── updateCategory.schema.ts
+│   │   ├── services/
+│   │   │   ├── auth/
+│   │   │   │   ├── index.ts
+│   │   │   │   ├── login.service.ts
+│   │   │   │   └── logout.service.ts
+│   │   │   └── categories/
+│   │   │       ├── createCategory.service.ts
+│   │   │       ├── getCategory.service.ts
+│   │   │       ├── index.ts
+│   │   │       ├── listCategories.service.ts
+│   │   │       ├── resolveCategorySlug.service.ts
+│   │   │       └── updateCategory.service.ts
+│   │   └── types/
+│   │       ├── auth/
+│   │       │   └── auth.types.ts
+│   │       ├── categories/
+│   │       │   └── category.types.ts
+│   │       ├── action-result.ts
+│   │       └── database.types.ts
+│   ├── features/
+│   │   ├── auth/
+│   │   │   └── components/
+│   │   │       ├── login-form.tsx
+│   │   │       └── logout-button.tsx
+│   │   └── categories/
+│   │       └── components/
+│   │           └── category-form.tsx
+│   ├── lib/
+│   │   ├── supabase/
+│   │   │   ├── client.ts
+│   │   │   ├── middleware.ts
+│   │   │   └── server.ts
+│   │   ├── env.ts
+│   │   └── errors.ts
+│   └── proxy.ts
 ├── supabase/
-│   ├── migrations/20261108_users_profiles.sql
-│   └── functions/
-├── tests/
-│   ├── unit/users/
-│   │   ├── createUser.service.test.ts
-│   │   ├── getUser.service.test.ts
-│   │   ├── listUsers.service.test.ts
-│   │   ├── updateUser.service.test.ts
-│   │   ├── deleteUser.service.test.ts
-│   │   └── createUser.schema.test.ts
-│   └── e2e/users.spec.ts
-└── src/
-    ├── proxy.ts
-    ├── app/
-    │   ├── layout.tsx
-    │   ├── globals.css
-    │   ├── (auth)/login/page.tsx
-    │   ├── (dashboard)/
-    │   │   ├── layout.tsx
-    │   │   └── users/
-    │   │       ├── page.tsx
-    │   │       ├── loading.tsx
-    │   │       ├── error.tsx
-    │   │       ├── new/page.tsx
-    │   │       └── [id]/
-    │   │           ├── page.tsx
-    │   │           └── edit/page.tsx
-    │   └── api/
-    │       ├── users/
-    │       │   ├── route.ts
-    │       │   └── [id]/route.ts
-    │       └── webhooks/whatsapp/route.ts
-    ├── actions/
-    │   └── users/
-    │       ├── createUser.action.ts
-    │       ├── getUser.action.ts
-    │       ├── listUsers.action.ts
-    │       ├── updateUser.action.ts
-    │       └── deleteUser.action.ts
-    ├── core/
-    │   ├── services/
-    │   │   └── users/
-    │   │       ├── createUser.service.ts
-    │   │       ├── getUser.service.ts
-    │   │       ├── listUsers.service.ts
-    │   │       ├── updateUser.service.ts
-    │   │       ├── deleteUser.service.ts
-    │   │       └── index.ts
-    │   ├── schemas/
-    │   │   └── users/
-    │   │       ├── userId.schema.ts
-    │   │       ├── createUser.schema.ts
-    │   │       ├── updateUser.schema.ts
-    │   │       ├── listUsers.schema.ts
-    │   │       └── index.ts
-    │   └── types/
-    │       ├── users/user.types.ts
-    │       ├── action-result.ts
-    │       └── database.types.ts
-    ├── features/
-    │   └── users/
-    │       ├── components/
-    │       │   ├── users-table.tsx
-    │       │   ├── users-table-skeleton.tsx
-    │       │   ├── user-form.tsx
-    │       │   ├── user-card.tsx
-    │       │   ├── user-delete-dialog.tsx
-    │       │   ├── user-avatar-upload.tsx
-    │       │   └── users-command-menu.tsx
-    │       ├── hooks/
-    │       │   ├── useUsers.ts
-    │       │   └── useUserMutations.ts
-    │       └── query-keys.ts
-    ├── components/
-    │   ├── ui/
-    │   ├── layout/ (sidebar.tsx, topbar.tsx, theme-toggle.tsx)
-    │   └── providers/ (query-provider.tsx, theme-provider.tsx)
-    └── lib/
-        ├── supabase/ (client.ts, server.ts, middleware.ts)
-        ├── api/ (response.ts, handle-error.ts)
-        ├── errors.ts
-        └── utils.ts
+│   ├── migrations/
+│   │   ├── 20261114201957_create_categories.sql
+│   │   ├── 20261115014333_grant_categories_privileges.sql
+│   │   └── 20261118224842_categories_length_checks.sql
+│   ├── .gitignore
+│   └── config.toml
+├── .env.example
+├── .gitignore
+├── .prettierignore
+├── .prettierrc
+├── AGENTS.md
+├── eslint.config.mjs
+├── lint-staged.config.mjs
+├── next-env.d.ts
+├── next.config.ts
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── PROGRESO.md
+├── README.md
+└── tsconfig.json
 ```

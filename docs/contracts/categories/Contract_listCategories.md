@@ -6,7 +6,7 @@
 | Schema          | `src/core/schemas/categories/listCategories.schema.ts`                                                                                                             |
 | Servicio        | `src/core/services/categories/listCategories.service.ts`                                                                                                           |
 | Permiso         | Sesión activa (provisorio: la política RLS actual permite leer a cualquier usuario autenticado). Pendiente: exigir rol `admin` cuando `include_deleted` sea `true` |
-| Equivalente API | `GET /api/categories → 200`                                                                                                                                        |
+| Equivalente API | Implementado: `GET /api/categories → 200`                                                                                                                          |
 
 ## Uso desde el front
 
@@ -145,4 +145,4 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** Action, schema Zod (incluye `include_deleted`) y Servicio con filtro de baja lógica.
-- **Pendiente:** exigir rol `admin` para `include_deleted`, y el Route Handler `GET /api/categories`.
+- **Pendiente:** exigir rol `admin` para `include_deleted`.
