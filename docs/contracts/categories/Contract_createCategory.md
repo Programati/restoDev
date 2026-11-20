@@ -9,7 +9,7 @@
 | Equivalente API | Planificado: `POST /api/categories → 201` (Route Handler aún no implementado) |
 
 La función exportada actualmente es `createCategoryAction`. El actor y los criterios funcionales
-están en la [Historia de Usuario](../../historias_de_usuario/categories/crear_categoria.md).
+están en la [Historia de Usuario](../../historias_de_usuario/categories/HU_crear_categoria.md).
 Los códigos HTTP de esta ficha describen el Route Handler planificado; la Server Action no devuelve
 códigos HTTP.
 

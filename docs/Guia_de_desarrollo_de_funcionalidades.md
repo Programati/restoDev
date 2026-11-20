@@ -19,7 +19,7 @@ que todavía no está definido como pendiente, sin presentarlo como implementado
 
 ## 2. Escribir la Historia de Usuario
 
-Guardá la HU en `docs/historias_de_usuario/<modulo>/<nombre>.md`.
+Guardá la HU en `docs/historias_de_usuario/<modulo>/HU_<verbo>_<entidad>.md`.
 
 Usá una frase breve:
 
@@ -61,7 +61,7 @@ esquema, regenerá `src/core/types/database.types.ts` en el mismo cambio. Ver
 ## 4. Escribir el contrato de la operación
 
 Antes del código, completá una ficha desde
-[`docs/contracts/_template.md`](./contracts/_template.md) y agregala al resumen del módulo.
+[`docs/contracts/Contract_template.md`](./contracts/Contract_template.md) y agregala al resumen del módulo.
 Consultá también [`docs/Contratos_de_actions.md`](./Contratos_de_actions.md).
 
 El contrato es el acuerdo de integración entre front y back, aunque la operación sea una Server
