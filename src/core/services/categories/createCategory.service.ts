@@ -4,53 +4,18 @@ import type { Category, CreateCategoryDto } from "@/core/types/categories/catego
 import type { Database } from "@/core/types/database.types"
 import { ServiceError } from "@/lib/errors"
 
-const FALLBACK_SLUG = "categoria"
+import { resolveCategorySlug } from "./resolveCategorySlug.service"
+
 const MAX_INSERT_ATTEMPTS = 3
-
-// "Bebidas sin Alcohol!" -> "bebidas-sin-alcohol"
-function slugify(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-}
-
-// Busca slugs ocupados (incluidos los de categorías dadas de baja: no se filtra por
-// `deleted_at`) y devuelve `base`, o `base-2`, `base-3`... el primero libre.
-async function resolveUniqueSlug(
-  supabase: SupabaseClient<Database>,
-  base: string,
-): Promise<string> {
-  const { data, error } = await supabase
-    .from("categories")
-    .select("slug")
-    .or(`slug.eq.${base},slug.like.${base}-*`)
-
-  if (error) {
-    console.error("createCategory: no se pudo consultar los slugs existentes", error)
-    throw new ServiceError("INTERNAL_ERROR", "Error inesperado. Intentá de nuevo")
-  }
-
-  const taken = new Set(data.map((row) => row.slug))
-  if (!taken.has(base)) return base
-
-  let suffix = 2
-  while (taken.has(`${base}-${suffix}`)) suffix++
-  return `${base}-${suffix}`
-}
 
 export async function createCategory(
   supabase: SupabaseClient<Database>,
   dto: CreateCategoryDto,
   userId: string,
 ): Promise<Category> {
-  const baseSlug = slugify(dto.name) || FALLBACK_SLUG
-
   // Reintenta solo si otra petición ocupó el mismo slug entre la consulta y el insert
   for (let attempt = 1; attempt <= MAX_INSERT_ATTEMPTS; attempt++) {
-    const slug = await resolveUniqueSlug(supabase, baseSlug)
+    const slug = await resolveCategorySlug(supabase, dto.name)
 
     const { data, error } = await supabase
       .from("categories")

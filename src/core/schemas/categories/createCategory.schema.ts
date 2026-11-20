@@ -10,7 +10,7 @@ export const createCategorySchema = z.object({
   icon_name: z
     .string()
     .trim()
-    .min(1, "El nombre del ícono no puede estar vacío")
+    .min(1, "El nombre del ícono no puede se un espacio vacío")
     .max(50, "El nombre del ícono no puede superar los 50 caracteres")
     .nullable()
     .optional(),
