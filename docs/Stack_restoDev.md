@@ -20,10 +20,12 @@ Respetar cada ítem. No sustituir tecnologías ni agregar alternativas.
 
 - [ ] Base de datos: PostgreSQL
 - [ ] Seguridad: RLS en todas las tablas, más `GRANT` explícito a los roles que correspondan (ver `docs/database/supabase-cli.md`)
+- [ ] Autorización: por permisos (`modulo.accion`) resueltos en la base con funciones del esquema `private`; las políticas verifican permisos, no nombres de rol (ver `docs/Plan_identidad_y_permisos.md`)
 - [ ] Auth: Supabase Auth con `@supabase/ssr` (cookies, Middleware)
+- [ ] Clave `service_role`: solo servidor, validada en `env.ts`, nunca `NEXT_PUBLIC_`; se usa únicamente para la API de administración de Auth (bloqueo de usuarios inactivos)
 - [ ] Archivos: Supabase Storage
-- [ ] Tiempo real: Supabase Realtime
-- [ ] Lógica remota: RPC para funciones SQL complejas; Edge Functions para tareas aisladas
+- [ ] Tiempo real: Supabase Realtime (no publicar las tablas de identidad, permisos ni `audit_logs`)
+- [ ] Lógica remota: RPC para funciones SQL complejas y para operaciones sensibles de seguridad (`SECURITY DEFINER` con `search_path` fijo y `REVOKE` a `public` y `anon`); Edge Functions para tareas aisladas
 
 ## 4. Estado y Validación
 

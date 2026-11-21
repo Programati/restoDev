@@ -1,7 +1,7 @@
 # Plan: identidad, acceso y auditoría
 
 > Copiar a `docs/Plan_identidad_y_permisos.md`. Última actualización: 2026-11-20.
-> Referencia de diseño: `DER_identidad_acceso_auditoria.html`. Detalle por tabla: `docs/database/model/Model_*.md` (se crean en la Fase 0).
+> Referencia de diseño: `docs/database/DER_identidad_acceso_auditoria.html`. Detalle por tabla: `docs/database/model/Model_*.md`.
 
 ## 0. Cómo usar este archivo
 
@@ -13,15 +13,15 @@
 
 ## 1. Estado general
 
-| Fase | Contenido                                           | Rama sugerida                    | Depende de | Estado    |
-| ---- | --------------------------------------------------- | -------------------------------- | ---------- | --------- |
-| P    | Cerrar `deleteCategory` y sincronizar documentación | `feature/daleteCategory` (hoy)   | —          | Pendiente |
-| F0   | Decisiones y modelos documentados (sin código)      | `docs/identity-access-design`    | P          | Pendiente |
-| F1   | Base de identidad: `profiles`                       | `feature/identity-profiles`      | F0         | Pendiente |
-| F2   | Roles, permisos y funciones de autorización         | `feature/roles-permissions`      | F1         | Pendiente |
-| F3   | Migrar `categories` a permisos                      | `feature/categories-permissions` | F2         | Pendiente |
-| F4   | Auditoría (`audit_logs` + triggers)                 | `feature/audit-logs`             | F3         | Pendiente |
-| F5   | Protecciones, RPC administrativas y cierre          | `feature/access-hardening`       | F4         | Pendiente |
+| Fase | Contenido                                           | Rama sugerida                    | Depende de | Estado                              |
+| ---- | --------------------------------------------------- | -------------------------------- | ---------- | ----------------------------------- |
+| P    | Cerrar `deleteCategory` y sincronizar documentación | `feature/daleteCategory`         | —          | Mergeada; falta P.2 (documentación) |
+| F0   | Decisiones y modelos documentados (sin código)      | `docs/identity-access-design`    | P          | Lista para PR                       |
+| F1   | Base de identidad: `profiles`                       | `feature/identity-profiles`      | F0         | Pendiente                           |
+| F2   | Roles, permisos y funciones de autorización         | `feature/roles-permissions`      | F1         | Pendiente                           |
+| F3   | Migrar `categories` a permisos                      | `feature/categories-permissions` | F2         | Pendiente                           |
+| F4   | Auditoría (`audit_logs` + triggers)                 | `feature/audit-logs`             | F3         | Pendiente                           |
+| F5   | Protecciones, RPC administrativas y cierre          | `feature/access-hardening`       | F4         | Pendiente                           |
 
 Una fase = una rama = un PR hacia `develop` (squash), con `pnpm run check:full` en verde. Las migraciones viajan en el mismo PR que el código que las usa y los tipos se regeneran en ese PR (`Git_workflow.md`, sección 8).
 
@@ -64,7 +64,7 @@ Una fase = una rama = un PR hacia `develop` (squash), con `pnpm run check:full` 
 | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---- |
 | Política `categories_provisional_authenticated_all` (`for all to authenticated using (true)`)        | Cualquier usuario con sesión lee y escribe                           | Se reemplaza por políticas separadas de lectura, alta y modificación basadas en permisos; sin política de `DELETE` | F3   |
 | `GRANT select, insert, update on categories to authenticated`                                        | Correcto (sin `DELETE`)                                              | Se mantiene; se verifica que no haya `GRANT` para `anon`                                                           | F3   |
-| `categories.updated_by` → `auth.users(id)` sin `ON DELETE`                                           | Con `NO ACTION`, impide borrar un usuario que haya tocado categorías | Decidir (D3): mantener la FK y agregar `ON DELETE SET NULL`                                                        | F3   |
+| `categories.updated_by` → `auth.users(id)` sin `ON DELETE`                                           | Con `NO ACTION`, impide borrar un usuario que haya tocado categorías | Mantener la FK y agregar `ON DELETE SET NULL` (D3)                                                                 | F3   |
 | `TODO(roles)` en las 5 Actions de `categories` (create, get, list, update, delete)                   | Solo se comprueba sesión                                             | Se reemplaza por la verificación de permiso y `FORBIDDEN`                                                          | F3   |
 | `include_deleted` en `getCategory` y `listCategories`                                                | Cualquier autenticado puede pedirlo                                  | Exige `categories.manage`                                                                                          | F3   |
 | `resolveCategorySlug` (lee los slugs de **todas** las filas, incluidas las de baja)                  | Funciona porque la política permite leer todo                        | Quien pueda escribir debe poder leer todas las filas (ver trampa T2)                                               | F3   |
@@ -77,28 +77,29 @@ Una fase = una rama = un PR hacia `develop` (squash), con `pnpm run check:full` 
 
 ## 5. Decisiones (Fase 0)
 
-Cada decisión lleva una recomendación; se marca `[x]` cuando queda **confirmada**.
+Todas confirmadas el 2026-11-20. Los 6 `Model_*.md`, el DER, `Reglas_de_negocio.md`, `Convenciones_de_archivos.md` y `Stack_restoDev.md` las reflejan. Una decisión nueva a mitad de una fase se agrega acá (regla de la sección 0).
 
-- [ ] **D1. Roles base.** Recomendación: sembrar solo `admin` ahora (`is_system = true`). `staff` y `delivery` (mencionados en el DER) y cajero/mesero se agregan junto con los módulos que los necesiten. `Reglas_de_negocio.md` está vacío: completarlo para estos roles antes de sembrarlos.
-- [ ] **D2. Catálogo de permisos** (formato `modulo.accion`). Recomendación, solo lo que existe hoy: `categories.read`, `categories.manage`, `users.manage`, `roles.manage`, `audit.read`, `admin.access`. El DER usa `admin.access` y `audit.read` sin listarlos en el catálogo: dejarlos explícitos. `categories.manage` incluye `categories.read` (lo resuelve la política, no un permiso aparte).
-- [ ] **D3. Referencia de autoría.** Recomendación: `auth.users(id)` en `categories.updated_by` y en `audit_logs.actor_id` (el DER propone `profiles(id)`). Es el mismo UUID, evita una dependencia de orden y no obliga a tocar datos de `categories`. En `categories.updated_by` agregar `ON DELETE SET NULL`.
-- [ ] **D4. RPC frente a "el Servicio consulta Supabase directo".** Recomendación: lecturas y escrituras simples siguen el flujo actual (Servicio + cliente Supabase + RLS). `SECURITY DEFINER` + `supabase.rpc()` solo para operaciones sensibles (asignar roles y permisos, cambiar `status`). Dejarlo escrito en `Convenciones_de_archivos.md` y `Stack_restoDev.md`.
-- [ ] **D5. Cómo se sincroniza `banned_until` con `profiles.status`.** Opciones: API de administración de Auth con una clave `service_role` (solo servidor, validada en `env.ts`, nunca `NEXT_PUBLIC_`) o una función SQL. Hoy `service_role` no tiene permisos ni cliente. Decidir antes de la F5.
-- [ ] **D6. Baja de `profiles` y `roles`.** Usan `status` / `is_active` y no `deleted_at`. Documentarlo como excepción deliberada en sus modelos.
-- [ ] **D7. Alta e invitación.** El DER define `pending` y `onboarding_required` sin describir el flujo. Recomendación para este plan: el enum incluye `pending`, el trigger crea perfiles `active` salvo que venga marcado como invitación, y el flujo completo de invitación queda fuera de alcance.
-- [ ] **D8. Primer administrador.** Recomendación: las migraciones siembran roles y permisos, no usuarios (cada entorno tiene usuarios distintos). La asignación del primer `admin` es un SQL documentado en `docs/database/supabase-cli.md`, ejecutado una vez por entorno.
-- [ ] **D9. Auditoría: retención y datos sensibles.** Decidir política de retención de `audit_logs` y qué campos excluir de `old_data` / `new_data` (hoy no hay ninguno sensible en las tablas auditadas).
-- [ ] **D10. Aprobación del DER.** Corregir el título ("7 tablas" → 6 propias más `auth.users`) y marcarlo aprobado.
-- [ ] **D11. Autorización en las Actions.** Recomendación: un helper único (por ejemplo `src/lib/auth/requirePermission.ts`) que use `private.has_permission` vía RPC o `get_current_access_context()`, devuelva `FORBIDDEN` y se invoque en cada Action antes de validar con Zod. Un solo lugar para el cambio.
+- [x] **D1. Roles base.** Sembrar solo `admin` (`is_system = true`). `staff` y `delivery` (mencionados en el DER) y cajero/mesero se agregan junto con los módulos que los necesiten, y ahí se define su regla en `Reglas_de_negocio.md`.
+- [x] **D2. Catálogo de permisos** (formato `modulo.accion`), solo lo que existe hoy: `categories.read`, `categories.manage`, `users.manage`, `roles.manage`, `audit.read`, `admin.access`. `admin.access` y `audit.read` quedan explícitos (el DER los usaba sin listarlos). `categories.manage` incluye `categories.read` (lo resuelve la política, no un permiso aparte).
+- [x] **D3. Referencia de autoría.** `auth.users(id)` en `categories.updated_by` y en `audit_logs.actor_id` (el DER proponía `profiles(id)`; ya corregido). Es el mismo UUID, evita una dependencia de orden y no obliga a tocar datos de `categories`. En `categories.updated_by` se agrega `ON DELETE SET NULL`.
+- [x] **D4. RPC frente a "el Servicio consulta Supabase directo".** Lecturas y escrituras simples siguen el flujo actual (Servicio + cliente Supabase + RLS). `SECURITY DEFINER` + `supabase.rpc()` solo para operaciones sensibles (asignar roles y permisos, cambiar `status`). Escrito en `Convenciones_de_archivos.md` y `Stack_restoDev.md`.
+- [x] **D5. Cómo se sincroniza `banned_until` con `profiles.status`.** API de administración de Auth con una clave `service_role` (solo servidor, validada en `env.ts`, nunca `NEXT_PUBLIC_`). Hoy `service_role` no tiene cliente. Se implementa en F5.2; ahí también se revisa si hace falta algún `GRANT` a `service_role` (hoy no tiene ninguno).
+- [x] **D6. Baja de `profiles` y `roles`.** Usan `status` / `is_active` y no `deleted_at`. Documentado como excepción deliberada en sus modelos.
+- [x] **D7. Alta e invitación.** El enum incluye `pending`; el trigger crea perfiles `active` salvo que venga marcado como invitación; el flujo completo de invitación queda fuera de alcance. A resolver en F1: la marca debe viajar en `raw_app_meta_data` (el usuario no puede editarlo) y hay que confirmar que el registro público de Auth está desactivado.
+- [x] **D8. Primer administrador.** Las migraciones siembran roles y permisos, no usuarios (cada entorno tiene usuarios distintos). La asignación del primer `admin` es un SQL documentado en `docs/database/supabase-cli.md`, ejecutado una vez por entorno (F2.5).
+- [x] **D9. Auditoría: retención y datos sensibles.** Sin purga por ahora (volumen bajo); se revisa antes de auditar tablas con más movimiento, como `orders`. Hoy no hay campos sensibles en las tablas auditadas; el trigger debe poder excluir columnas por tabla si aparece alguno.
+- [x] **D10. Aprobación del DER.** Título corregido (6 tablas propias más `auth.users`), `actor_id` alineado con D3 y marcado como aprobado.
+- [x] **D11. Autorización en las Actions.** Un helper único (por ejemplo `src/lib/auth/requirePermission.ts`) que use `private.has_permission` vía RPC o `get_current_access_context()`, devuelva `FORBIDDEN` y se invoque en cada Action antes de validar con Zod. Un solo lugar para el cambio.
 
 ### Tareas de la Fase 0
 
-- [ ] F0.1 Cerrar D1–D11 (puede hacerse conversando de a una).
-- [ ] F0.2 Crear los 6 `docs/database/model/Model_*.md` desde `Model_template.md` (`profiles`, `roles`, `permissions`, `role_permissions`, `user_roles`, `audit_logs`), con la sección "Impacto en `categories`" donde corresponda.
-- [ ] F0.3 Mover o enlazar el DER dentro de `docs/database/` y corregir su título.
-- [ ] F0.4 Completar `Reglas_de_negocio.md` para los roles y permisos acordados.
-- [ ] F0.5 Actualizar `Convenciones_de_archivos.md` y `Stack_restoDev.md` según D4.
-- [ ] F0.6 Agregar este plan y el enlace en `PROGRESO.md`.
+- [x] F0.1 Cerrar D1–D11.
+- [x] F0.2 Crear los 6 `docs/database/model/Model_*.md` desde `Model_template.md`, con la sección "Impacto en `categories`" donde corresponda. Archivos: `Model_profile.md`, `Model_role.md`, `Model_permission.md`, `Model_role_permission.md`, `Model_user_role.md` y `Model_audit_log.md` (singular, como `Model_category.md`).
+- [x] F0.3 Mover el DER a `docs/database/` y corregir su título; `audit_logs.actor_id` alineado con D3.
+- [x] F0.4 Completar `Reglas_de_negocio.md` para los roles y permisos acordados.
+- [x] F0.5 Actualizar `Convenciones_de_archivos.md` y `Stack_restoDev.md` según D4.
+- [x] F0.6 Agregar este plan y el enlace en `PROGRESO.md`.
+- [ ] F0.7 Al copiar los archivos al repo: correr `pnpm format` y `pnpm check:full`, y abrir el PR de documentación hacia `develop`.
 - **Impacto en `categories`:** ninguno; solo queda decidido.
 - **Cierre:** decisiones confirmadas y modelos escritos; PR de documentación mergeado.
 
@@ -106,11 +107,11 @@ Cada decisión lleva una recomendación; se marca `[x]` cuando queda **confirmad
 
 ### Fase P. Prerrequisito: cerrar `deleteCategory`
 
-`PROGRESO.md` dice que la implementación no comenzó, pero la Action, el schema, el Servicio, el contrato y el export en `index.ts` ya existen. Hay que dejar esa rama cerrada antes de tocar permisos, para no mezclar dos cambios.
+La implementación de `deleteCategory` ya está mergeada en `develop`. Falta dejar la documentación al día.
 
-- [ ] P.1 Pasar `check:full` en la rama actual y abrir el PR hacia `develop`.
+- [x] P.1 Pasar `check:full` en la rama actual y abrir el PR hacia `develop`.
 - [ ] P.2 Sincronizar `PROGRESO.md` (estado real de `deleteCategory`), `Estructura_de_carpetas.md` (faltan `deleteCategory.action.ts`, `.schema.ts`, `.service.ts` y `Contract_deleteCategory.md`) y la tabla de verificación de HU-CAT-005.
-- [ ] P.3 Mergear en `develop` y crear la rama de la Fase 0 desde ahí (la rama actual tiene un typo, `daleteCategory`; se borra al mergear).
+- [x] P.3 Mergear en `develop` y crear la rama de la Fase 0 desde ahí (la rama con el typo `daleteCategory` se borra al mergear).
 - **Impacto en `categories`:** cierra la operación de baja con permiso provisorio, tal como está documentada.
 
 ### Fase 1. Base de identidad: `profiles`
@@ -119,7 +120,7 @@ Cada decisión lleva una recomendación; se marca `[x]` cuando queda **confirmad
 - [ ] F1.2 Migración: enum `profile_status` (`pending`, `active`, `inactive`) y tabla `profiles` (`id` PK y FK a `auth.users` con `ON DELETE CASCADE`, `full_name` 2–120 tras `btrim`, `phone` ≤ 30, `avatar_path`, `status` default `'pending'` según D7, `created_at`, `updated_at`), índice `(status)`.
 - [ ] F1.3 Trigger `set_updated_at` reutilizando `public.set_updated_at()` (ya existe).
 - [ ] F1.4 `ENABLE ROW LEVEL SECURITY`; política de lectura del propio perfil (`id = (select auth.uid())`); `GRANT select` a `authenticated`; **sin** escritura directa desde la API.
-- [ ] F1.5 Función `handle_new_auth_user` (`SECURITY DEFINER`, `search_path` fijo) y trigger `AFTER INSERT ON auth.users`; `REVOKE EXECUTE` de la función. Probar que el trigger sobre `auth.users` se aplica con `db push --remote`.
+- [ ] F1.5 Función `handle_new_auth_user` (`SECURITY DEFINER`, `search_path` fijo) y trigger `AFTER INSERT ON auth.users`; `REVOKE EXECUTE` de la función. Definir dónde viaja la marca de invitación (D7) y probar que el trigger sobre `auth.users` se aplica con `db push --remote`.
 - [ ] F1.6 **Backfill** de los usuarios que ya existen en `auth.users` (incluido el de pruebas): `status = 'active'`, `full_name` tomado de `raw_user_meta_data` o, si falta, de la parte local del email (debe cumplir el CHECK de 2–120).
 - [ ] F1.7 Regenerar `database.types.ts`; actualizar `Model_profile.md`, lista de migraciones en `Estructura_de_carpetas.md` y `PROGRESO.md`.
 - **Verificación:** un usuario nuevo recibe perfil; el usuario existente tiene perfil `active`; un usuario lee su perfil y no el ajeno; un `UPDATE` directo falla con `42501`; `check:full`.
@@ -132,7 +133,7 @@ Cada decisión lleva una recomendación; se marca `[x]` cuando queda **confirmad
 - [ ] F2.3 Esquema `private` y funciones `private.has_permission(code)`, `private.has_role(code)`, `private.is_admin()`: `SECURITY DEFINER`, `STABLE`, `search_path` fijo; verifican perfil `active`, rol `is_active` y la cadena `user_roles → roles → role_permissions → permissions`. `GRANT USAGE` + `EXECUTE` a `authenticated`, `REVOKE` a `public` y `anon`. Confirmar que `private` no está expuesto en la API.
 - [ ] F2.4 Migración de seed (idempotente, `on conflict do nothing`): permisos de D2, rol `admin` con `is_system = true` y su relación con todos los permisos.
 - [ ] F2.5 Asignar `admin` al usuario de pruebas con el SQL documentado (D8).
-- [ ] F2.6 Políticas de lectura de cada tabla según el DER 3.4 (`roles.manage`, `users.manage`, filas propias).
+- [ ] F2.6 Políticas de lectura de cada tabla según el DER 3.4 (`roles.manage`, `users.manage`, filas propias); incluye agregar `users.manage` a la lectura de `profiles`.
 - [ ] F2.7 Regenerar tipos; completar `Model_*.md` de las cuatro tablas, `supabase-cli.md` (procedimiento del primer admin) y `PROGRESO.md`.
 - **Verificación:** `has_permission` por cada caso de la matriz de la sección 7 (sin rol, perfil inactivo, perfil `pending`, rol inactivo, admin); seed repetible sin errores; `check:full`.
 - **Impacto en `categories`:** ninguno todavía (la política provisoria sigue). Confirmar que el usuario admin conserva el acceso.
@@ -149,7 +150,7 @@ Es una migración de alteración, no de recreación. Orden obligatorio:
   - Sin política de `DELETE` (y sin `GRANT` de `DELETE`).
 - [ ] F3.3 Probar con el admin y con un usuario sin permisos (sección 7) mientras la provisoria sigue activa. Ojo: las políticas permisivas se combinan con `OR`, así que la prueba real de denegación solo es válida **después** del paso siguiente.
 - [ ] F3.4 Migración B: `drop policy categories_provisional_authenticated_all`. Repetir la matriz completa.
-- [ ] F3.5 Migración C (según D3): `updated_by` con `ON DELETE SET NULL`. Verificar que borrar un usuario de prueba ya no queda bloqueado.
+- [ ] F3.5 Migración C (D3): `updated_by` con `ON DELETE SET NULL`. Verificar que borrar un usuario de prueba ya no queda bloqueado.
 - [ ] F3.6 Crear el helper de D11 y reemplazar los 5 `TODO(roles)`:
   - `createCategoryAction`, `updateCategoryAction`, `deleteCategoryAction`: exigen `categories.manage`.
   - `getCategoryAction`, `listCategoriesAction`: exigen `categories.read`, y `categories.manage` si `include_deleted` es `true`.
@@ -166,14 +167,14 @@ Es una migración de alteración, no de recreación. Orden obligatorio:
 - [ ] F4.3 Trigger genérico `SECURITY DEFINER` (`AFTER`, así no interfiere con `set_updated_at`): `actor_id = auth.uid()` (NULL si actúa el servidor o una migración), `record_id` compuesto (`"user_id:role_id"`, `"role_id:permission_code"`) en las tablas sin `id`, exclusión de campos de D9. `REVOKE EXECUTE` de la función.
 - [ ] F4.4 Activar el trigger primero en `profiles`, `roles`, `permissions`, `role_permissions`, `user_roles`; verificar; después en `categories`.
 - [ ] F4.5 Confirmar que `audit_logs` no está en la publicación de Realtime.
-- [ ] F4.6 Documentación: `Model_audit_logs.md`; en `categories`, quitar "Registro en `audit_logs`" de los pendientes de los 5 contratos, las HU y el modelo, y pasar los "Efectos secundarios" a "implementado".
+- [ ] F4.6 Documentación: `Model_audit_log.md`; en `categories`, quitar "Registro en `audit_logs`" de los pendientes de los 5 contratos, las HU y el modelo, y pasar los "Efectos secundarios" a "implementado".
 - **Verificación:** insertar, modificar y dar de baja una categoría genera un evento cada vez con el actor correcto; nadie puede editar ni borrar eventos; un usuario sin `audit.read` no los lee; `check:full`.
 - **Impacto en `categories`:** se agrega el trigger; no cambian la tabla ni las Actions. Verificar que el trigger no rompe `.select()` posterior a `insert`/`update`.
 
 ### Fase 5. Protecciones y cierre
 
 - [ ] F5.1 Rama `feature/access-hardening`.
-- [ ] F5.2 Resolver D5 e implementar la sincronización de `banned_until` con `profiles.status` (al pasar a `inactive` se bloquea; al reactivar se limpia).
+- [ ] F5.2 Implementar la sincronización de `banned_until` con `profiles.status` según D5 (al pasar a `inactive` se bloquea; al reactivar se limpia): cliente de administración de Auth con `service_role` solo de servidor, variable validada en `env.ts` (nunca `NEXT_PUBLIC_`) y entrada en `.env.example` sin valor. Revisar si hace falta algún `GRANT` a `service_role`.
 - [ ] F5.3 Trigger de `is_system`: rechaza borrar roles del sistema, cambiarles el `code` o desactivarlos (en trigger, no solo en RPC).
 - [ ] F5.4 Protección anti-escalada en `user_roles` y `role_permissions`: exige `roles.manage` y bloquea la autoasignación. Debe **permitir** las migraciones y el seed (sin `auth.uid()`); por eso va en esta fase, no antes.
 - [ ] F5.5 Guardia del último administrador: impide quitar `admin`, inactivar o borrar al último usuario con `admin.access`.
@@ -215,6 +216,8 @@ Además, para cada tabla expuesta: intentar escribir **sin pasar por la Action**
 
 ## 9. Registro de cambios
 
-| Fecha      | Cambio                                                               |
-| ---------- | -------------------------------------------------------------------- |
-| 2026-11-20 | Archivo creado con el plan por fases, decisiones y matriz de pruebas |
+| Fecha      | Cambio                                                                                                                                                          |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-20 | Archivo creado con el plan por fases, decisiones y matriz de pruebas                                                                                            |
+| 2026-11-20 | F0: confirmadas D1, D3, D5 y D9; escritos los 6 modelos (F0.2) y `Reglas_de_negocio.md` (F0.4)                                                                  |
+| 2026-11-20 | F0: confirmadas D2, D4, D6, D7, D8, D10 y D11; DER corregido (F0.3), convenciones y stack (F0.5) y `PROGRESO.md` (F0.6) actualizados. `deleteCategory` mergeada |

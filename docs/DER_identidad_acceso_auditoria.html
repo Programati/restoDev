@@ -3,9 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>
-      Identidad, acceso y auditoría — Diccionario, relaciones y seguridad
-    </title>
+    <title>Identidad, acceso y auditoría — Diccionario, relaciones y seguridad</title>
     <style>
       :root {
         --ink: #172033;
@@ -191,45 +189,42 @@
     <header>
       <h1>Identidad, acceso y auditoría</h1>
       <p>
-        Diccionario de datos, relaciones y reglas de seguridad de las 7 tablas
-        que sostienen usuarios, roles, permisos y auditoría, para tener en
-        cuenta al escribir el SQL.
+        Diccionario de datos, relaciones y reglas de seguridad de las 6 tablas propias (más
+        <code>auth.users</code>, de Supabase) que sostienen usuarios, roles, permisos y auditoría,
+        para tener en cuenta al escribir el SQL.
       </p>
       <div class="pills">
-        <span class="pill">7 tablas</span
-        ><span class="pill">PostgreSQL / Supabase</span
-        ><span class="pill">RLS en todas</span
-        ><span class="pill">Esquema public</span>
+        <span class="pill">6 tablas + auth.users</span
+        ><span class="pill">PostgreSQL / Supabase</span><span class="pill">RLS en todas</span
+        ><span class="pill">Esquema public</span><span class="pill">Aprobado 2026-11-20</span>
       </div>
     </header>
     <main>
       <div class="notice">
-        <b>Criterio de diseño:</b> cada campo existe porque la aplicación lo
-        necesita. <code>email</code>, contraseña, último ingreso y bloqueo real
-        viven en <code>auth.users</code> (Supabase) y no se duplican. Quién
-        asignó un rol y cuándo se obtiene de <code>audit_logs</code>, no de
-        columnas extra. Los tipos y longitudes son propuestas para el SQL.
+        <b>Criterio de diseño:</b> cada campo existe porque la aplicación lo necesita.
+        <code>email</code>, contraseña, último ingreso y bloqueo real viven en
+        <code>auth.users</code> (Supabase) y no se duplican. Quién asignó un rol y cuándo se obtiene
+        de <code>audit_logs</code>, no de columnas extra. Los tipos y longitudes son propuestas para
+        el SQL.
       </div>
 
       <h2>1. Diccionario de datos</h2>
       <div class="info">
-        <b>Convenciones:</b> <code>uuid</code> para identificadores;
-        <code>text</code> con <code>CHECK</code> de longitud en lugar de
-        <code>varchar(n)</code>; <code>timestamptz</code> para instantes; enum
-        de PostgreSQL para estados cerrados. Todo <code>updated_at</code> se
-        mantiene con un trigger <code>set_updated_at</code>.
+        <b>Convenciones:</b> <code>uuid</code> para identificadores; <code>text</code> con
+        <code>CHECK</code> de longitud en lugar de <code>varchar(n)</code>;
+        <code>timestamptz</code> para instantes; enum de PostgreSQL para estados cerrados. Todo
+        <code>updated_at</code> se mantiene con un trigger <code>set_updated_at</code>.
       </div>
 
       <div class="card">
         <div class="title">
           <h3>1.1 <code>profiles</code></h3>
-          <span class="tag">public</span
-          ><span class="tag">1:1 con auth.users</span>
+          <span class="tag">public</span><span class="tag">1:1 con auth.users</span>
         </div>
         <p class="small">
           Datos propios de la aplicación para cada cuenta. Reemplaza
-          <code>active</code> y <code>archived_at</code> por un solo
-          <code>status</code>, y elimina <code>notes</code>.
+          <code>active</code> y <code>archived_at</code> por un solo <code>status</code>, y elimina
+          <code>notes</code>.
         </p>
         <div class="wrap">
           <table>
@@ -269,9 +264,7 @@
                 <td>text</td>
                 <td>Sí</td>
                 <td>Ruta en Storage, no URL</td>
-                <td>
-                  Foto opcional. Se guarda la ruta porque la URL puede cambiar.
-                </td>
+                <td>Foto opcional. Se guarda la ruta porque la URL puede cambiar.</td>
               </tr>
               <tr>
                 <td><code>status</code></td>
@@ -279,8 +272,8 @@
                 <td>No</td>
                 <td>DEFAULT 'pending'. Enum: pending | active | inactive</td>
                 <td>
-                  <b>pending</b>: invitado sin completar el alta. <b>active</b>:
-                  puede operar. <b>inactive</b>: bloqueado y archivado.
+                  <b>pending</b>: invitado sin completar el alta. <b>active</b>: puede operar.
+                  <b>inactive</b>: bloqueado y archivado.
                 </td>
               </tr>
               <tr>
@@ -304,8 +297,8 @@
           <b>Índice:</b> <code>(status)</code> para listados filtrados.
           <b>Migración:</b>
           <code
-            >status = case when archived_at is not null or not active then
-            'inactive' else 'active' end</code
+            >status = case when archived_at is not null or not active then 'inactive' else 'active'
+            end</code
           >; se pasan los invitados pendientes a <code>pending</code>.
         </p>
       </div>
@@ -316,8 +309,8 @@
           <span class="tag">public</span>
         </div>
         <p class="small">
-          Agrupaciones de permisos. Sin <code>created_by</code>: la autoría
-          queda en <code>audit_logs</code>.
+          Agrupaciones de permisos. Sin <code>created_by</code>: la autoría queda en
+          <code>audit_logs</code>.
         </p>
         <div class="wrap">
           <table>
@@ -344,8 +337,8 @@
                 <td>No</td>
                 <td>UNIQUE, CHECK code ~ '^[a-z][a-z0-9_.-]{1,49}$'</td>
                 <td>
-                  Código técnico en minúsculas (admin, delivery). El CHECK evita
-                  duplicados por mayúsculas.
+                  Código técnico en minúsculas (admin, delivery). El CHECK evita duplicados por
+                  mayúsculas.
                 </td>
               </tr>
               <tr>
@@ -367,19 +360,14 @@
                 <td>boolean</td>
                 <td>No</td>
                 <td>DEFAULT false</td>
-                <td>
-                  Rol base protegido: no se borra, no cambia de código ni se
-                  desactiva.
-                </td>
+                <td>Rol base protegido: no se borra, no cambia de código ni se desactiva.</td>
               </tr>
               <tr>
                 <td><code>is_active</code></td>
                 <td>boolean</td>
                 <td>No</td>
                 <td>DEFAULT true</td>
-                <td>
-                  Si es false, sus permisos dejan de aplicarse sin borrar nada.
-                </td>
+                <td>Si es false, sus permisos dejan de aplicarse sin borrar nada.</td>
               </tr>
               <tr>
                 <td><code>created_at</code></td>
@@ -407,8 +395,8 @@
         </div>
         <p class="small">
           Catálogo fijo, sembrado por migraciones. La PK natural
-          <code>code</code> evita un <code>id</code> sin uso y hace legibles las
-          políticas y <code>role_permissions</code>.
+          <code>code</code> evita un <code>id</code> sin uso y hace legibles las políticas y
+          <code>role_permissions</code>.
         </p>
         <div class="wrap">
           <table>
@@ -428,8 +416,8 @@
                 <td>No</td>
                 <td>PK, CHECK code ~ '^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$'</td>
                 <td>
-                  Formato <code>modulo.accion</code>:
-                  <code>orders.manage</code>, <code>users.manage</code>.
+                  Formato <code>modulo.accion</code>: <code>orders.manage</code>,
+                  <code>users.manage</code>.
                 </td>
               </tr>
               <tr>
@@ -437,10 +425,7 @@
                 <td>text</td>
                 <td>No</td>
                 <td>CHECK code LIKE module || '.%'</td>
-                <td>
-                  Agrupa en la pantalla de roles. El CHECK impide que contradiga
-                  al código.
-                </td>
+                <td>Agrupa en la pantalla de roles. El CHECK impide que contradiga al código.</td>
               </tr>
               <tr>
                 <td><code>name</code></td>
@@ -490,10 +475,7 @@
                 <td><code>permission_code</code></td>
                 <td>text</td>
                 <td>No</td>
-                <td>
-                  PK parcial + FK → permissions(code) ON UPDATE CASCADE ON
-                  DELETE RESTRICT
-                </td>
+                <td>PK parcial + FK → permissions(code) ON UPDATE CASCADE ON DELETE RESTRICT</td>
                 <td>Permiso concedido.</td>
               </tr>
             </tbody>
@@ -501,8 +483,8 @@
         </div>
         <p class="small">
           La PK compuesta impide asignar dos veces el mismo permiso.
-          <b>Índice:</b> <code>(permission_code, role_id)</code> para consultar
-          a qué roles pertenece un permiso. Sin <code>assigned_at</code>.
+          <b>Índice:</b> <code>(permission_code, role_id)</code> para consultar a qué roles
+          pertenece un permiso. Sin <code>assigned_at</code>.
         </p>
       </div>
 
@@ -541,11 +523,10 @@
           </table>
         </div>
         <p class="small">
-          Un usuario puede tener varios roles (por ejemplo, admin y delivery).
-          Sin <code>assigned_by</code> ni <code>assigned_at</code>: ambos datos
-          están en <code>audit_logs</code>. Si el panel necesita mostrar “tiene
-          el rol desde…”, se agrega <code>assigned_at</code>. <b>Índice:</b>
-          <code>(role_id, user_id)</code>.
+          Un usuario puede tener varios roles (por ejemplo, admin y delivery). Sin
+          <code>assigned_by</code> ni <code>assigned_at</code>: ambos datos están en
+          <code>audit_logs</code>. Si el panel necesita mostrar “tiene el rol desde…”, se agrega
+          <code>assigned_at</code>. <b>Índice:</b> <code>(role_id, user_id)</code>.
         </p>
       </div>
 
@@ -571,19 +552,18 @@
                 <td>bigint</td>
                 <td>No</td>
                 <td>PK, GENERATED ALWAYS AS IDENTITY</td>
-                <td>
-                  Orden cronológico y volumen alto: bigint es más liviano que
-                  uuid.
-                </td>
+                <td>Orden cronológico y volumen alto: bigint es más liviano que uuid.</td>
               </tr>
               <tr>
                 <td><code>actor_id</code></td>
                 <td>uuid</td>
                 <td>Sí</td>
-                <td>FK → profiles(id) ON DELETE SET NULL</td>
+                <td>FK → auth.users(id) ON DELETE SET NULL</td>
                 <td>
                   Quién actuó. NULL si fue el servidor o una migración (sin
-                  <code>auth.uid()</code>).
+                  <code>auth.uid()</code>). Referencia a <code>auth.users</code> y no a
+                  <code>profiles</code>: es el mismo UUID, no depende del orden de creación de las
+                  tablas y es la misma referencia que usa <code>categories.updated_by</code>.
                 </td>
               </tr>
               <tr>
@@ -607,8 +587,7 @@
                 <td></td>
                 <td>
                   Id del registro. En claves compuestas:
-                  <code>"user_id:role_id"</code> y
-                  <code>"role_id:permission_code"</code>.
+                  <code>"user_id:role_id"</code> y <code>"role_id:permission_code"</code>.
                 </td>
               </tr>
               <tr>
@@ -630,29 +609,24 @@
                 <td>timestamptz</td>
                 <td>No</td>
                 <td>DEFAULT now()</td>
-                <td>
-                  Momento del evento. Sin <code>updated_at</code> porque nunca
-                  se modifica.
-                </td>
+                <td>Momento del evento. Sin <code>updated_at</code> porque nunca se modifica.</td>
               </tr>
             </tbody>
           </table>
         </div>
         <p class="small">
-          <b>Índices:</b> <code>(created_at desc)</code>,
-          <code>(table_name, record_id)</code>, <code>(actor_id)</code>. El
-          último es necesario porque la FK de <code>actor_id</code> lo requiere
-          para borrados eficientes.
+          <b>Índices:</b> <code>(created_at desc)</code>, <code>(table_name, record_id)</code>,
+          <code>(actor_id)</code>. El último es necesario porque la FK de <code>actor_id</code> lo
+          requiere para borrados eficientes.
         </p>
       </div>
 
       <div class="info">
-        <b>Entidad externa:</b> <code>auth.users</code> es nativa de Supabase y
-        no se crea desde las migraciones. Aporta <code>email</code>,
-        <code>last_sign_in_at</code>, <code>banned_until</code> (bloqueo real) y
-        <code>raw_app_meta_data</code>. Son 6 tablas propias en este dominio más
-        la entidad externa; el título “7” del esquema original cuenta a
-        <code>auth.users</code> como punto de partida de las relaciones.
+        <b>Entidad externa:</b> <code>auth.users</code> es nativa de Supabase y no se crea desde las
+        migraciones. Aporta <code>email</code>, <code>last_sign_in_at</code>,
+        <code>banned_until</code> (bloqueo real) y <code>raw_app_meta_data</code>. Son 6 tablas
+        propias en este dominio más esta entidad externa, que es el punto de partida de las
+        relaciones.
       </div>
 
       <h2>2. Relaciones y cardinalidades</h2>
@@ -676,8 +650,8 @@
                   <code>auth.users.id</code>
                 </td>
                 <td>
-                  Cada cuenta tiene un perfil; el perfil no existe sin cuenta.
-                  Un trigger lo crea al registrarse el usuario.
+                  Cada cuenta tiene un perfil; el perfil no existe sin cuenta. Un trigger lo crea al
+                  registrarse el usuario.
                 </td>
               </tr>
               <tr>
@@ -696,9 +670,7 @@
                 <td><code>profiles</code> N — M <code>roles</code></td>
                 <td>N — M</td>
                 <td>Tabla puente <code>user_roles</code></td>
-                <td>
-                  Resuelve la relación muchos a muchos entre usuarios y roles.
-                </td>
+                <td>Resuelve la relación muchos a muchos entre usuarios y roles.</td>
               </tr>
               <tr>
                 <td><code>roles</code> — <code>role_permissions</code></td>
@@ -707,9 +679,7 @@
                 <td>Un rol concede varios permisos.</td>
               </tr>
               <tr>
-                <td>
-                  <code>permissions</code> — <code>role_permissions</code>
-                </td>
+                <td><code>permissions</code> — <code>role_permissions</code></td>
                 <td>1 — N</td>
                 <td>FK <code>role_permissions.permission_code</code></td>
                 <td>Un permiso puede estar en varios roles.</td>
@@ -718,28 +688,21 @@
                 <td><code>roles</code> N — M <code>permissions</code></td>
                 <td>N — M</td>
                 <td>Tabla puente <code>role_permissions</code></td>
-                <td>
-                  Resuelve la relación muchos a muchos entre roles y permisos.
-                </td>
+                <td>Resuelve la relación muchos a muchos entre roles y permisos.</td>
               </tr>
               <tr>
-                <td><code>profiles</code> — <code>audit_logs</code></td>
+                <td><code>auth.users</code> — <code>audit_logs</code></td>
                 <td>0..1 — N</td>
                 <td>FK <code>audit_logs.actor_id</code> (nullable)</td>
-                <td>
-                  Un usuario genera muchos eventos; un evento puede no tener
-                  actor.
-                </td>
+                <td>Un usuario genera muchos eventos; un evento puede no tener actor.</td>
               </tr>
               <tr>
                 <td><code>audit_logs</code> → otras tablas</td>
                 <td>Lógica</td>
+                <td><code>table_name</code> + <code>record_id</code> (sin FK)</td>
                 <td>
-                  <code>table_name</code> + <code>record_id</code> (sin FK)
-                </td>
-                <td>
-                  Referencia polimórfica a propósito: el historial debe
-                  sobrevivir al borrado del registro original.
+                  Referencia polimórfica a propósito: el historial debe sobrevivir al borrado del
+                  registro original.
                 </td>
               </tr>
             </tbody>
@@ -747,59 +710,51 @@
         </div>
         <p class="small">
           Cadena de autorización:
-          <code
-            >usuario → user_roles → roles → role_permissions → permissions</code
-          >. Un permiso se aplica solo si el perfil está <code>active</code> y
-          el rol tiene <code>is_active = true</code>.
+          <code>usuario → user_roles → roles → role_permissions → permissions</code>. Un permiso se
+          aplica solo si el perfil está <code>active</code> y el rol tiene
+          <code>is_active = true</code>.
         </p>
       </div>
 
       <h2>3. Seguridad que debe demostrarse</h2>
-      <p>
-        Reglas a incorporar cuando se escriba el SQL, cada una con su motivo.
-      </p>
+      <p>Reglas a incorporar cuando se escriba el SQL, cada una con su motivo.</p>
 
       <div class="card">
         <h3>3.1 Reglas que acompañan al esquema</h3>
         <ol>
           <li>
-            <b>Estado y login.</b> Al pasar <code>profiles.status</code> a
-            <code>inactive</code>, el servidor también pone
-            <code>banned_until</code> en <code>auth.users</code>; al reactivar,
-            lo limpia. <i>Por qué:</i> el estado de la aplicación no cierra
-            sesiones ni impide renovar tokens. Solo el bloqueo de Auth corta el
-            acceso de verdad.
+            <b>Estado y login.</b> Al pasar <code>profiles.status</code> a <code>inactive</code>, el
+            servidor también pone <code>banned_until</code> en <code>auth.users</code>; al
+            reactivar, lo limpia. <i>Por qué:</i> el estado de la aplicación no cierra sesiones ni
+            impide renovar tokens. Solo el bloqueo de Auth corta el acceso de verdad.
           </li>
           <li>
-            <b>Auditoría de seguridad.</b> Triggers de auditoría en
-            <code>profiles</code>, <code>roles</code>, <code>user_roles</code> y
-            <code>role_permissions</code> (y en <code>permissions</code> por si
-            se edita el catálogo). <i>Por qué:</i> al quitar
-            <code>assigned_by</code> y <code>assigned_at</code>, el trigger es
-            la única forma de saber quién dio cada rol y cuándo.
+            <b>Auditoría de seguridad.</b> Triggers de auditoría en <code>profiles</code>,
+            <code>roles</code>, <code>user_roles</code> y <code>role_permissions</code> (y en
+            <code>permissions</code> por si se edita el catálogo). <i>Por qué:</i> al quitar
+            <code>assigned_by</code> y <code>assigned_at</code>, el trigger es la única forma de
+            saber quién dio cada rol y cuándo.
           </li>
           <li>
             <b><code>record_id</code> en claves compuestas.</b> El trigger arma
-            <code>"user_id:role_id"</code> y
-            <code>"role_id:permission_code"</code> porque no existe columna
-            <code>id</code>. <i>Por qué:</i> sin esto el trigger genérico
-            guardaría NULL y el evento sería imposible de rastrear.
+            <code>"user_id:role_id"</code> y <code>"role_id:permission_code"</code> porque no existe
+            columna <code>id</code>. <i>Por qué:</i> sin esto el trigger genérico guardaría NULL y
+            el evento sería imposible de rastrear.
           </li>
           <li>
             <b><code>is_system</code>.</b> Las RPC y un trigger
-            <code>BEFORE UPDATE OR DELETE</code> rechazan borrar roles del
-            sistema, cambiarles el <code>code</code> o desactivarlos.
-            <i>Por qué:</i> el código depende de <code>admin</code>,
-            <code>staff</code> y <code>delivery</code>; si se renombran, se
-            rompe el acceso al panel. La regla va en trigger y no solo en RPC
-            para que no se pueda saltear por la Data API.
+            <code>BEFORE UPDATE OR DELETE</code> rechazan borrar roles del sistema, cambiarles el
+            <code>code</code> o desactivarlos. <i>Por qué:</i> el código depende de
+            <code>admin</code>; si se renombra, se rompe el acceso al panel. Los demás roles (por
+            ejemplo <code>staff</code> y <code>delivery</code>) se protegen igual cuando se siembren
+            con su módulo. La regla va en trigger y no solo en RPC para que no se pueda saltear por
+            la Data API.
           </li>
           <li>
-            <b><code>audit_logs.actor_id</code>.</b> Es NULL cuando actúa el
-            servidor o una migración. Con <code>ON DELETE SET NULL</code> el
-            historial sobrevive al borrado del perfil. <i>Por qué:</i> un
-            registro de auditoría que desaparece con el usuario no sirve como
-            evidencia.
+            <b><code>audit_logs.actor_id</code>.</b> Es NULL cuando actúa el servidor o una
+            migración. Con <code>ON DELETE SET NULL</code> el historial sobrevive al borrado de la
+            cuenta. <i>Por qué:</i> un registro de auditoría que desaparece con el usuario no sirve
+            como evidencia.
           </li>
         </ol>
       </div>
@@ -820,54 +775,59 @@
                 <td><code>profiles.id → auth.users.id</code></td>
                 <td>CASCADE</td>
                 <td>
-                  Un perfil sin cuenta no tiene sentido ni puede usarse. En la
-                  práctica la baja normal es <code>status = inactive</code>;
-                  borrar la cuenta queda para casos excepcionales.
+                  Un perfil sin cuenta no tiene sentido ni puede usarse. En la práctica la baja
+                  normal es <code>status = inactive</code>; borrar la cuenta queda para casos
+                  excepcionales.
                 </td>
               </tr>
               <tr>
                 <td><code>user_roles.user_id → profiles.id</code></td>
                 <td>CASCADE</td>
                 <td>
-                  Las asignaciones de un usuario eliminado quedan huérfanas. El
-                  evento de borrado queda en <code>audit_logs</code>.
+                  Las asignaciones de un usuario eliminado quedan huérfanas. El evento de borrado
+                  queda en <code>audit_logs</code>.
                 </td>
               </tr>
               <tr>
                 <td><code>user_roles.role_id → roles.id</code></td>
                 <td>RESTRICT</td>
                 <td>
-                  Impide borrar un rol en uso y dejar usuarios sin permisos sin
-                  darse cuenta. Se debe desasignar primero (o desactivar el
-                  rol).
+                  Impide borrar un rol en uso y dejar usuarios sin permisos sin darse cuenta. Se
+                  debe desasignar primero (o desactivar el rol).
                 </td>
               </tr>
               <tr>
                 <td><code>role_permissions.role_id → roles.id</code></td>
                 <td>CASCADE</td>
                 <td>
-                  Los permisos de un rol borrado no tienen utilidad; borrar el
-                  rol ya está protegido por RESTRICT.
+                  Los permisos de un rol borrado no tienen utilidad; borrar el rol ya está protegido
+                  por RESTRICT.
                 </td>
               </tr>
               <tr>
                 <td>
-                  <code
-                    >role_permissions.permission_code → permissions.code</code
-                  >
+                  <code>role_permissions.permission_code → permissions.code</code>
                 </td>
                 <td>RESTRICT en delete, CASCADE en update</td>
                 <td>
-                  Quitar un permiso del catálogo debería ser una decisión
-                  consciente. Renombrar un código se propaga solo.
+                  Quitar un permiso del catálogo debería ser una decisión consciente. Renombrar un
+                  código se propaga solo.
                 </td>
               </tr>
               <tr>
-                <td><code>audit_logs.actor_id → profiles.id</code></td>
+                <td><code>audit_logs.actor_id → auth.users.id</code></td>
                 <td>SET NULL</td>
                 <td>
-                  Conserva el historial aunque se elimine al actor. Nunca
-                  CASCADE: borraría la evidencia.
+                  Conserva el historial aunque se elimine al actor. Nunca CASCADE: borraría la
+                  evidencia.
+                </td>
+              </tr>
+              <tr>
+                <td><code>categories.updated_by → auth.users.id</code></td>
+                <td>SET NULL</td>
+                <td>
+                  Hoy es <code>NO ACTION</code> e impide borrar un usuario que haya modificado
+                  categorías. Se corrige en la migración de <code>categories</code> a permisos.
                 </td>
               </tr>
             </tbody>
@@ -879,63 +839,54 @@
         <h3>3.3 Funciones auxiliares y triggers</h3>
         <ul>
           <li>
-            <b
-              ><code>private.has_permission(code)</code> y
-              <code>private.has_role(code)</code>.</b
-            >
+            <b><code>private.has_permission(code)</code> y <code>private.has_role(code)</code>.</b>
             <code>SECURITY DEFINER</code>, <code>STABLE</code>,
-            <code>SET search_path = public, auth</code>, esquema
-            <code>private</code> sin acceso desde la API. Verifican perfil
-            <code>active</code>, rol <code>is_active</code> y relación completa.
-            <i>Por qué:</i> las políticas de <code>user_roles</code> consultan
-            tablas que a su vez tienen RLS; sin SECURITY DEFINER habría
-            recursión infinita. El <code>search_path</code> fijo evita secuestro
-            de funciones.
+            <code>SET search_path = public, auth</code>, esquema <code>private</code> sin acceso
+            desde la API. Verifican perfil <code>active</code>, rol <code>is_active</code> y
+            relación completa. <i>Por qué:</i> las políticas de <code>user_roles</code> consultan
+            tablas que a su vez tienen RLS; sin SECURITY DEFINER habría recursión infinita. El
+            <code>search_path</code> fijo evita secuestro de funciones.
           </li>
           <li>
             <b>Política de uso.</b> Las políticas RLS verifican
-            <b>permisos</b> (<code>has_permission('users.manage')</code>) y no
-            nombres de rol; <code>private.is_admin()</code> queda como atajo.
-            <i>Por qué:</i> permite crear roles personalizados sin tocar las
-            políticas.
+            <b>permisos</b> (<code>has_permission('users.manage')</code>) y no nombres de rol;
+            <code>private.is_admin()</code> queda como atajo. <i>Por qué:</i> permite crear roles
+            personalizados sin tocar las políticas.
           </li>
           <li>
-            <b><code>set_updated_at</code></b> en <code>profiles</code> y
-            <code>roles</code>: garantiza que <code>updated_at</code> no dependa
-            del cliente.
+            <b><code>set_updated_at</code></b> en <code>profiles</code> y <code>roles</code>:
+            garantiza que <code>updated_at</code> no dependa del cliente.
           </li>
           <li>
-            <b><code>handle_new_auth_user</code></b> (<code
-              >AFTER INSERT ON auth.users</code
-            >): crea el perfil con <code>status = 'pending'</code> si el alta
-            viene de invitación (<code>onboarding_required</code>) y
-            <code>'active'</code> en otro caso. <i>Por qué:</i> evita perfiles
-            faltantes y que un invitado opere antes de completar el alta.
+            <b><code>handle_new_auth_user</code></b> (<code>AFTER INSERT ON auth.users</code>): crea
+            el perfil con <code>status = 'pending'</code> si el alta viene de invitación
+            (<code>onboarding_required</code>) y <code>'active'</code> en otro caso.
+            <i>Por qué:</i> evita perfiles faltantes y que un invitado opere antes de completar el
+            alta. La marca de invitación debe viajar en <code>raw_app_meta_data</code>, que el
+            usuario no puede editar, y el registro público de Auth debe estar desactivado.
           </li>
           <li>
-            <b>Trigger de auditoría genérico</b> <code>SECURITY DEFINER</code>:
-            escribe en <code>audit_logs</code> con permisos propios, ya que los
-            usuarios no pueden insertar directamente.
+            <b>Trigger de auditoría genérico</b> <code>SECURITY DEFINER</code>: escribe en
+            <code>audit_logs</code> con permisos propios, ya que los usuarios no pueden insertar
+            directamente.
           </li>
           <li>
-            <b>Protección anti-escalada</b> (<code
-              >BEFORE INSERT/UPDATE/DELETE</code
-            >
-            en <code>user_roles</code> y <code>role_permissions</code>): exige
-            <code>roles.manage</code> y bloquea que un usuario se asigne roles o
-            permisos a sí mismo. <i>Por qué:</i> un administrador comprometido
-            no debería poder entregarse más poder sin dejar de ser detectable.
+            <b>Protección anti-escalada</b> (<code>BEFORE INSERT/UPDATE/DELETE</code> en
+            <code>user_roles</code> y <code>role_permissions</code>): exige
+            <code>roles.manage</code> y bloquea que un usuario se asigne roles o permisos a sí
+            mismo. <i>Por qué:</i> un administrador comprometido no debería poder entregarse más
+            poder sin dejar de ser detectable. Debe permitir migraciones y seed (sin
+            <code>auth.uid()</code>).
           </li>
           <li>
-            <b>Guardia del último administrador:</b> impide quitar el rol
-            <code>admin</code>, inactivar o borrar al último usuario con
-            <code>admin.access</code>. <i>Por qué:</i> evita quedarse sin nadie
-            que pueda gestionar el sistema.
+            <b>Guardia del último administrador:</b> impide quitar el rol <code>admin</code>,
+            inactivar o borrar al último usuario con <code>admin.access</code>.
+            <i>Por qué:</i> evita quedarse sin nadie que pueda gestionar el sistema.
           </li>
           <li>
-            <b>Defensa por Data API:</b> <code>REVOKE EXECUTE</code> de las
-            funciones de trigger a <code>public</code>, <code>anon</code> y
-            <code>authenticated</code>, para que no puedan invocarse a mano.
+            <b>Defensa por Data API:</b> <code>REVOKE EXECUTE</code> de las funciones de trigger a
+            <code>public</code>, <code>anon</code> y <code>authenticated</code>, para que no puedan
+            invocarse a mano.
           </li>
         </ul>
       </div>
@@ -943,10 +894,9 @@
       <div class="card">
         <h3>3.4 Row Level Security</h3>
         <p class="small">
-          RLS activado en las 6 tablas. Primero <code>REVOKE ALL</code> a
-          <code>anon</code> y <code>authenticated</code>; luego solo los
-          <code>GRANT</code> necesarios. Las escrituras sensibles se hacen por
-          RPC <code>SECURITY DEFINER</code> con validación interna.
+          RLS activado en las 6 tablas. Primero <code>REVOKE ALL</code> a <code>anon</code> y
+          <code>authenticated</code>; luego solo los <code>GRANT</code> necesarios. Las escrituras
+          sensibles se hacen por RPC <code>SECURITY DEFINER</code> con validación interna.
         </p>
         <div class="wrap">
           <table>
@@ -966,28 +916,26 @@
                   <code>users.manage</code>
                 </td>
                 <td>
-                  Sin GRANT directo. El usuario edita <code>full_name</code>,
-                  <code>phone</code>, <code>avatar_path</code> mediante RPC;
-                  <code>status</code> solo lo cambia <code>users.manage</code>
+                  Sin GRANT directo. El usuario edita <code>full_name</code>, <code>phone</code>,
+                  <code>avatar_path</code> mediante RPC; <code>status</code> solo lo cambia
+                  <code>users.manage</code>
                 </td>
                 <td>
                   Si el usuario pudiera hacer UPDATE directo, podría reactivarse
-                  (<code>status</code>) o cambiar campos protegidos. RLS
-                  controla filas, no columnas.
+                  (<code>status</code>) o cambiar campos protegidos. RLS controla filas, no
+                  columnas.
                 </td>
               </tr>
               <tr>
                 <td><code>roles</code></td>
                 <td>Cualquier usuario autenticado con perfil activo</td>
                 <td>
-                  Solo <code>roles.manage</code>, vía RPC
-                  (<code>admin_create_role</code>,
-                  <code>admin_update_role</code>,
-                  <code>admin_delete_role</code>)
+                  Solo <code>roles.manage</code>, vía RPC (<code>admin_create_role</code>,
+                  <code>admin_update_role</code>, <code>admin_delete_role</code>)
                 </td>
                 <td>
-                  El panel necesita mostrar nombres de rol; modificarlos es
-                  privilegio administrativo.
+                  El panel necesita mostrar nombres de rol; modificarlos es privilegio
+                  administrativo.
                 </td>
               </tr>
               <tr>
@@ -995,29 +943,21 @@
                 <td><code>roles.manage</code></td>
                 <td>Ninguno desde la API; solo migraciones</td>
                 <td>
-                  Es un catálogo sembrado por código. Editarlo en runtime
-                  permite inventar permisos que nada verifica.
+                  Es un catálogo sembrado por código. Editarlo en runtime permite inventar permisos
+                  que nada verifica.
                 </td>
               </tr>
               <tr>
                 <td><code>role_permissions</code></td>
                 <td><code>roles.manage</code></td>
                 <td>Solo vía RPC con <code>roles.manage</code></td>
-                <td>
-                  Define quién puede hacer qué: la tabla más sensible del
-                  dominio.
-                </td>
+                <td>Define quién puede hacer qué: la tabla más sensible del dominio.</td>
               </tr>
               <tr>
                 <td><code>user_roles</code></td>
                 <td>Propias filas o <code>users.manage</code></td>
-                <td>
-                  Solo vía RPC con <code>users.manage</code>, sin autoasignación
-                </td>
-                <td>
-                  El usuario necesita saber sus roles para armar el menú, pero
-                  no cambiarlos.
-                </td>
+                <td>Solo vía RPC con <code>users.manage</code>, sin autoasignación</td>
+                <td>El usuario necesita saber sus roles para armar el menú, pero no cambiarlos.</td>
               </tr>
               <tr>
                 <td><code>audit_logs</code></td>
@@ -1027,8 +967,7 @@
                   <code>REVOKE UPDATE, DELETE, TRUNCATE</code> a todos los roles
                 </td>
                 <td>
-                  Un registro de auditoría que se puede editar o borrar no sirve
-                  como evidencia.
+                  Un registro de auditoría que se puede editar o borrar no sirve como evidencia.
                 </td>
               </tr>
             </tbody>
@@ -1036,57 +975,52 @@
         </div>
         <ul>
           <li>
-            <b>Rendimiento:</b> en las políticas se escribe
-            <code>(select auth.uid())</code> y
-            <code>(select private.has_permission(...))</code> para que se
-            evalúen una vez por consulta y no por fila.
+            <b>Rendimiento:</b> en las políticas se escribe <code>(select auth.uid())</code> y
+            <code>(select private.has_permission(...))</code> para que se evalúen una vez por
+            consulta y no por fila.
           </li>
           <li>
-            <b>Sesiones antiguas:</b> las políticas exigen perfil
-            <code>active</code>; así una sesión vigente de un usuario inactivo
-            ya no lee datos aunque el token siga válido.
+            <b>Sesiones antiguas:</b> las políticas exigen perfil <code>active</code>; así una
+            sesión vigente de un usuario inactivo ya no lee datos aunque el token siga válido.
           </li>
           <li>
             <b>Contrato de la app:</b>
-            <code>get_current_access_context()</code> devuelve usuario, email,
-            roles y permisos en una sola llamada; el frontend decide qué
-            mostrar, pero la seguridad real la imponen RLS y las RPC.
+            <code>get_current_access_context()</code> devuelve usuario, email, roles y permisos en
+            una sola llamada; el frontend decide qué mostrar, pero la seguridad real la imponen RLS
+            y las RPC.
           </li>
           <li>
-            <b>Realtime:</b> no publicar estas tablas. Expondrían cambios de
-            permisos y auditoría a canales que no pasan por las RPC.
+            <b>Realtime:</b> no publicar estas tablas. Expondrían cambios de permisos y auditoría a
+            canales que no pasan por las RPC.
           </li>
           <li>
-            <b>Verificación:</b> cada política debe tener su prueba: usuario sin
-            rol, inactivo, <code>pending</code> y admin intentando leer y
-            escribir cada tabla.
+            <b>Verificación:</b> cada política debe tener su prueba: usuario sin rol, inactivo,
+            <code>pending</code> y admin intentando leer y escribir cada tabla.
           </li>
         </ul>
       </div>
 
       <div class="card">
-        <h3>3.5 Pendientes para el SQL</h3>
+        <h3>3.5 Decisiones sobre retención y datos sensibles</h3>
         <ul>
           <li>
-            <b>Retención de <code>audit_logs</code>:</b> hoy crece sin límite.
-            El volumen de estas tablas es bajo, pero conviene decidir una
-            política (por ejemplo, 12 meses con partición mensual o purga
-            programada) antes de auditar tablas con más movimiento.
+            <b>Retención de <code>audit_logs</code>:</b> sin purga por ahora. El volumen de estas
+            tablas es bajo. Se revisa antes de auditar tablas con más movimiento (por ejemplo,
+            pedidos); si se agrega purga, requerirá una excepción explícita al
+            <code>REVOKE DELETE</code>.
           </li>
           <li>
-            <b
-              >Datos sensibles en <code>old_data</code> y
-              <code>new_data</code>:</b
-            >
-            el trigger debe excluir campos como tokens o claves si alguna tabla
-            futura los tuviera.
+            <b>Datos sensibles en <code>old_data</code> y <code>new_data</code>:</b>
+            hoy ninguna tabla auditada tiene campos sensibles. El trigger debe poder excluir
+            columnas por tabla (tokens, claves) si alguna tabla futura las tuviera.
           </li>
         </ul>
       </div>
 
       <footer>
-        Documento de diseño. No contiene SQL ejecutable ni políticas RLS
-        definitivas; sirve de referencia para escribir las migraciones.
+        Documento de diseño, aprobado el 2026-11-20. No contiene SQL ejecutable ni políticas RLS
+        definitivas; sirve de referencia para escribir las migraciones. Decisiones asociadas en
+        <code>docs/Plan_identidad_y_permisos.md</code>.
       </footer>
     </main>
   </body>

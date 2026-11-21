@@ -6,10 +6,10 @@
 ## Proyecto
 
 - **Nombre:** resto-app (`restoDev`)
-- **Rama detectada por Git:** `feature/daleteCategory`
-- **Cambios locales sin commit ni PR:** actualización y renombre de documentación; la implementación de `deleteCategory` todavía no comenzó
-- **PRs anteriores:** los PR de setup, Supabase, entorno, autenticación y `createCategory` están completados y mergeados en `develop`
-- **Estado actual:** iniciar el diseño y la implementación de la baja lógica de categorías
+- **Rama:** `docs/identity-access-design` (Fase 0 del plan de identidad y permisos)
+- **Cambios locales sin commit ni PR:** documentación de la Fase 0 (plan, 6 modelos, DER, reglas de negocio, convenciones y stack)
+- **PRs anteriores:** los PR de setup, Supabase, entorno, autenticación, `createCategory` y `deleteCategory` están completados y mergeados en `develop`
+- **Estado actual:** Fase 0 completa a falta de PR; sigue la Fase 1 (`profiles`). Detalle en `docs/Plan_identidad_y_permisos.md`
 - **Gestor:** pnpm 12.11.2 · Node 24.22.1
 
 ## Stack
@@ -72,9 +72,10 @@
 ## Docs existentes (`docs/`)
 
 - Guías raíz: `Stack_restoDev.md`, `Estructura_de_carpetas.md`, `Convenciones_de_archivos.md`, `Contratos_de_actions.md`, `Reglas_de_negocio.md`, `Guia_de_desarrollo_de_funcionalidades.md` y `Git_workflow.md`.
-- Contratos: `Contract_template.md`, `Contract_errors.md`, `auth/Contract_auth.md`, `auth/Contract_login.md`, `auth/Contract_logout.md` y `categories/Contract_categories.md` más las fichas `Contract_createCategory.md`, `Contract_getCategory.md`, `Contract_listCategories.md` y `Contract_updateCategory.md`.
-- Base de datos: `database/supabase-cli.md`, `database/model/Model_category.md` y `database/model/Model_template.md`.
-- Historias: `historias_de_usuario/HU_template.md` y HU de crear, obtener, listar, actualizar y eliminar categorías. La HU de eliminación sigue en borrador; todavía no hay contrato ni implementación `deleteCategory`.
+- Plan en curso: `Plan_identidad_y_permisos.md` (identidad, roles, permisos y auditoría; fases P y F0–F5, decisiones y matriz de pruebas).
+- Contratos: `Contract_template.md`, `Contract_errors.md`, `auth/Contract_auth.md`, `auth/Contract_login.md`, `auth/Contract_logout.md` y `categories/Contract_categories.md` más las fichas `Contract_createCategory.md`, `Contract_getCategory.md`, `Contract_listCategories.md` y `Contract_updateCategory.md` (y `Contract_deleteCategory.md`, ver estado en el plan, tarea P.2).
+- Base de datos: `database/supabase-cli.md`, `database/model/Model_template.md`, `Model_category.md` y los modelos de la Fase 0: `Model_profile.md`, `Model_role.md`, `Model_permission.md`, `Model_role_permission.md`, `Model_user_role.md` y `Model_audit_log.md` (todavía sin migración). Diseño de referencia: `database/DER_identidad_acceso_auditoria.html`.
+- Historias: `historias_de_usuario/HU_template.md` y HU de crear, obtener, listar, actualizar y eliminar categorías.
 
 ## Estado
 
@@ -124,33 +125,35 @@
 - [x] PRs anteriores de setup, Supabase, entorno, login y `createCategory` completados y mergeados en `develop`
 - [x] `pnpm run check:full` ejecutado y aprobado el 2026-11-20 (`format:check`, `lint`, `typecheck` y `build`)
 - [x] `docs/Estructura_de_carpetas.md` sincronizado con los archivos actuales del proyecto
-- [ ] Diseñar e implementar `deleteCategory`; la HU está en borrador y no existe contrato, Action, schema ni Servicio
+- [x] `deleteCategory` implementado y mergeado en `develop` (Action, schema, Servicio y contrato)
+- [ ] Sincronizar la documentación de `deleteCategory` (`Estructura_de_carpetas.md`, HU-CAT-005, `Contract_categories.md`); es la tarea P.2 del plan
+- [x] Fase 0 del plan de identidad: decisiones D1–D11 confirmadas, 6 modelos, DER corregido, reglas de negocio, convenciones y stack actualizados (falta el PR de documentación)
 - [ ] Definir e implementar la protección de la baja frente a productos activos cuando exista la tabla `products`
 - [ ] Crear `docs/Guia_front.md` si se mantiene como entregable; el archivo todavía no existe
 
 ## Próximos pasos
 
-1. Revisar y cerrar las decisiones abiertas de `HU-CAT-005` antes de implementar la baja lógica.
-2. Escribir `Contract_deleteCategory.md`, actualizar `Contract_categories.md` y acordar la respuesta, permisos y comportamiento ante una categoría ya dada de baja.
-3. Implementar schema, Action y Servicio para establecer `deleted_at` y `updated_by`; nunca hacer un borrado físico.
-4. Diseñar la migración de `products` y el mecanismo en base de datos que impida dar de baja categorías con productos activos; incluir RLS, políticas y GRANT. No dar por resuelta esa regla mientras `products` no exista.
-5. Agregar pruebas para la baja lógica, permisos, conflictos y la protección de productos; ejecutar `pnpm check:full`.
+1. Abrir y mergear el PR de la Fase 0 (`docs/identity-access-design`).
+2. Completar P.2 del plan: sincronizar la documentación de `deleteCategory`.
+3. Fase 1 (`feature/identity-profiles`): tabla `profiles`, trigger de alta y backfill. Ver `docs/Plan_identidad_y_permisos.md`.
+4. Fases 2 a 5 del plan: roles y permisos, migración de `categories`, auditoría y protecciones.
+5. Diseñar la migración de `products` y el mecanismo en base de datos que impida dar de baja categorías con productos activos; incluir RLS, políticas y GRANT. No dar por resuelta esa regla mientras `products` no exista.
 6. Completar la interfaz de listado/detalle/edición de categorías cuando se defina su alcance.
-7. Definir roles y políticas RLS definitivas, auditoría y próximos módulos de productos.
-8. Crear `docs/Guia_front.md` y evaluar las herramientas de Front cuando se retome ese trabajo.
+7. Crear `docs/Guia_front.md` y evaluar las herramientas de Front cuando se retome ese trabajo.
 
 ## Decisiones abiertas
 
 - ESLint 9.39.5 aparece como deprecado (existe 10.14.0). Evaluar migrar cuando `eslint-config-next` lo soporte
-- Modelo de auth y roles: todavía no existe un modelo de perfiles/roles. Definir los roles y permisos necesarios antes de reemplazar las políticas RLS provisorias; no hay contratos de `users` en el estado actual del proyecto
-- `/admin` dice "Hola ADMINISTRADOR" de forma fija: hoy cualquier usuario con sesión lo ve y el `proxy.ts` solo comprueba que haya sesión. Se corrige al definir los roles
-- Política RLS de `categories` provisoria (`to authenticated`, lectura y escritura), contraria a lo que dice `docs/database/model/Model_category.md`; reemplazar por políticas que exijan rol admin al definir los roles. Las Actions llevan `TODO(roles)` donde irá la verificación de rol. Hoy `createCategory` no devuelve `FORBIDDEN` por rol
-- Permisos (GRANT): regla vigente = GRANT explícito por tabla, mínimo necesario, sin `DELETE` en tablas con baja lógica y sin permisos para `anon`. `service_role` no tiene permisos; concederlos cuando exista un cliente que lo use
+- Modelo de auth y roles: decidido en la Fase 0 (ver `docs/Plan_identidad_y_permisos.md`, sección 5) y documentado en los `Model_*`; falta implementarlo (Fases 1 a 5). Se cierra al completar la Fase 3
+- `/admin` dice "Hola ADMINISTRADOR" de forma fija: hoy cualquier usuario con sesión lo ve y el `proxy.ts` solo comprueba que haya sesión. Se corrige en la Fase 3 (nombre del perfil y `admin.access` en layout o página)
+- Política RLS de `categories` provisoria (`to authenticated`, lectura y escritura), contraria a lo que dice `docs/database/model/Model_category.md`; se reemplaza por políticas basadas en permisos en la Fase 3. Las Actions llevan `TODO(roles)` donde irá la verificación de permiso. Hoy `createCategory` no devuelve `FORBIDDEN` por permiso
+- Permisos (GRANT): regla vigente = GRANT explícito por tabla, mínimo necesario, sin `DELETE` en tablas con baja lógica y sin permisos para `anon`. `service_role` no tiene permisos; se usará en la Fase 5 solo para la API de administración de Auth (decisión D5); revisar entonces si hace falta algún GRANT
 - La regla "no dar de baja una categoría con productos activos" debe validarse en la base (no solo en la UI). `products` todavía no existe, así que hay que diseñar la protección junto con su modelo y migración
-- El registro en `audit_logs` queda pendiente hasta definir el mecanismo de auditoría
+- El registro en `audit_logs` queda pendiente hasta la Fase 4 (decisión D9: sin purga por ahora)
+- Fase 1: definir dónde viaja la marca de invitación del alta (conviene `raw_app_meta_data`) y confirmar que el registro público de Auth está desactivado (D7)
 - El modelo y el contrato de `categories` documentan límites de `name` (2–80) e `icon_name` (1–50), aplicados también mediante constraints; mantenerlos alineados si cambian
 - Nombre de las Actions: el código exporta `createCategoryAction` y `logoutAction`, pero las fichas y los diagramas dicen `createCategory(input)` y `logout`. Alinear las fichas (o los nombres) para que no queden desfasados
-- El login ya usa el flujo "Server Actions → Servicios"; las otras funcionalidades de `auth` y el modelo de roles siguen pendientes
+- El login ya usa el flujo "Server Actions → Servicios"; las otras funcionalidades de `auth` siguen pendientes
 - La navegación del header solo tiene "Crear categoría" y "Salir"; se amplía a medida que existan pantallas (lo define Front)
 
 ## Registro de cambios
@@ -182,3 +185,4 @@
 | 2026-11-17 | `pnpm check:full` aprobado para el login separado; cambios integrados en `develop` mediante PR                                                           |
 | 2026-11-20 | PRs anteriores confirmados como completados; estado sincronizado con `get/list/updateCategory` y `GET /api/categories`; `deleteCategory` sigue pendiente |
 | 2026-11-20 | Referencias de documentación con prefijos `HU_`, `Contract_` y `Model_` sincronizadas                                                                    |
+| 2026-11-20 | `deleteCategory` mergeada en `develop`; Fase 0 del plan de identidad y permisos completa a falta del PR (`docs/Plan_identidad_y_permisos.md`)            |

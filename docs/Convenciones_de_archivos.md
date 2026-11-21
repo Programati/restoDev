@@ -9,3 +9,6 @@
 - [ ] Schema: un schema Zod por archivo
 - [ ] Tipos: agrupados por módulo en `<modulo>.types.ts` (`z.infer` de los schemas)
 - [ ] `index.ts` solo en `services/<modulo>/` y `schemas/<modulo>/`
+- [ ] Lecturas y escrituras simples: el Servicio consulta Supabase directamente y RLS protege la tabla
+- [ ] Operaciones sensibles (asignar roles y permisos, cambiar `status` de un perfil): función SQL `SECURITY DEFINER` invocada con `supabase.rpc()` desde el Servicio; la validación vive dentro de la función
+- [ ] Autorización: cada Action comprueba el permiso con el helper único (`src/lib/auth/requirePermission.ts`) antes de validar con Zod y devuelve `FORBIDDEN` si falta; RLS es la red de seguridad, no la única barrera
