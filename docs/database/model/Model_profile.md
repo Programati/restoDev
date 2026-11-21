@@ -1,5 +1,7 @@
 # profiles
 
+> Estado: implementada en la Fase 1 (`20261121130112_create_profiles.sql` y `20261121130136_backfill_profiles.sql`), aplicada al proyecto de pruebas y verificada. La marca de invitación del alta (D7) viaja en `raw_app_meta_data ->> 'invited' = 'true'`.
+
 ## Estructura
 
 | Campo         | Tipo             | Longitud | Nulo | Default     |
@@ -21,33 +23,36 @@ Enum `profile_status`: `pending` (invitado que no completó el alta), `active` (
 
 - **Clave primaria:** `id`.
 - **Unicidad:** ninguna adicional.
-- **Checks:** `length(btrim(full_name)) BETWEEN 2 AND 120`; `length(phone) <= 30`.
+- **Checks:** `profiles_full_name_length` (`length(btrim(full_name)) BETWEEN 2 AND 120`); `profiles_phone_length` (`phone IS NULL OR length(phone) <= 30`).
 - **Claves foráneas:** `id` → `auth.users(id)`; `ON DELETE CASCADE`. Un perfil no existe sin cuenta.
-- **Índices adicionales:** `(status)` para listados filtrados.
+- **Índices adicionales:** `profiles_status_idx` sobre `(status)` para listados filtrados.
 
 ## Relaciones
 
-- `auth.users`: 1 a 1. Un trigger `AFTER INSERT ON auth.users` crea el perfil.
+- `auth.users`: 1 a 1. Un trigger `AFTER INSERT ON auth.users` (`on_auth_user_created`) crea el perfil.
 - `user_roles`: 1 a N. Un usuario puede tener varios roles o ninguno.
 - `audit_logs`: no hay FK. `audit_logs.actor_id` apunta a `auth.users(id)` (D3), que es el mismo UUID.
 
 ## Reglas de negocio
 
 - Todo usuario de Auth tiene exactamente un perfil.
-- El trigger crea el perfil `active`, salvo que el alta venga marcada como invitación: en ese caso nace `pending` (D7). El flujo completo de invitación queda fuera de este plan.
+- El trigger crea el perfil `active`, salvo que el alta venga marcada como invitación (`raw_app_meta_data ->> 'invited' = 'true'`): en ese caso nace `pending` (D7). El flujo completo de invitación queda fuera de este plan.
+- `full_name` sale de `raw_user_meta_data ->> 'full_name'` o, si falta, de la parte local del email; se recorta a 120 caracteres y, si queda con menos de 2, se usa `Usuario` para que el alta en Auth nunca falle por el `CHECK`.
 - Solo un perfil `active` puede ejercer permisos: `private.has_permission` lo exige.
 - **Bajas:** no hay baja lógica con `deleted_at`. Dar de baja es pasar `status` a `inactive`; el borrado de la cuenta de Auth (que elimina el perfil por `CASCADE`) es excepcional.
 - **Sincronización con Auth (D5, F5):** al pasar a `inactive` se pone `banned_until` en `auth.users`; al reactivar, se limpia. Se hace con la API de administración de Auth y una clave `service_role` solo de servidor, validada en `env.ts` y nunca `NEXT_PUBLIC_`. Sin esto, el estado de la aplicación no corta sesiones ni la renovación de tokens.
 - **Dependencias:** no se puede inactivar ni borrar al último usuario con `admin.access` (guardia de F5).
-- **Trazabilidad:** `updated_at` lo mantiene `public.set_updated_at()`. Los cambios quedan en `audit_logs` desde F4.
+- **Trazabilidad:** `updated_at` lo mantiene `public.set_updated_at()` (trigger `profiles_set_updated_at`). Los cambios quedan en `audit_logs` desde F4.
+- **Backfill:** los usuarios que ya existían al crear la tabla recibieron un perfil `active` (migración `backfill_profiles`, idempotente).
 
 ## Seguridad
 
 - **RLS:** habilitada desde la creación de la tabla.
-- **Lectura:** cada usuario lee su propio perfil (`id = (select auth.uid())`). Quien tenga `users.manage` lee todos (política agregada en F2).
+- **Lectura:** cada usuario lee su propio perfil (política `profiles_select_own`, `id = (select auth.uid())`). Quien tenga `users.manage` lee todos (política agregada en F2).
 - **Inserción:** ninguna desde la API; la hace el trigger `handle_new_auth_user` (`SECURITY DEFINER`).
 - **Actualización:** sin `GRANT` directo. RLS controla filas, no columnas: con un `UPDATE` directo el usuario podría reactivarse cambiando `status`. Edición de `full_name`, `phone` y `avatar_path` y cambio de `status` por RPC (D4, F5).
 - **Baja:** sin `GRANT DELETE`.
+- **GRANT:** solo `select` a `authenticated`; nada para `anon`.
 - **Acceso provisional:** ninguno.
 - **Validación en base de datos:** `CHECK` de longitud, enum cerrado, `REVOKE EXECUTE` de `handle_new_auth_user` a `public`, `anon` y `authenticated`. Se asume que el registro público de Auth está desactivado; si no, cualquiera que se registre obtiene un perfil `active` (sin roles no tiene permisos, pero conviene cerrarlo).
 - Esta tabla no se publica en Realtime.
@@ -62,6 +67,8 @@ Enum `profile_status`: `pending` (invitado que no completó el alta), `active` (
 - RLS: un usuario lee su perfil y no el ajeno; un `UPDATE` o `INSERT` directo falla con `42501`; `anon` no lee nada.
 - `updated_at` cambia al modificar la fila.
 - Llamar a `handle_new_auth_user` desde la API falla.
+
+**Verificado el 2026-11-21 en el proyecto de pruebas:** backfill del usuario existente (`active`), alta de un usuario nuevo con perfil `active`, borrado en cascada, lectura del propio perfil (1 fila) y ninguno ajeno, `UPDATE` directo rechazado (`42501`), llamada a la función de trigger rechazada (`42501`) y lectura como `anon` rechazada (`42501`). Pendiente de probar: `pending` por invitación y los `CHECK` de longitud.
 
 ## Impacto en `categories`
 

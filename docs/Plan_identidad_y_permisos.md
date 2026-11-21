@@ -1,6 +1,6 @@
 # Plan: identidad, acceso y auditoría
 
-> Copiar a `docs/Plan_identidad_y_permisos.md`. Última actualización: 2026-11-20.
+> Copiar a `docs/Plan_identidad_y_permisos.md`. Última actualización: 2026-11-21.
 > Referencia de diseño: `docs/database/DER_identidad_acceso_auditoria.html`. Detalle por tabla: `docs/database/model/Model_*.md`.
 
 ## 0. Cómo usar este archivo
@@ -13,15 +13,15 @@
 
 ## 1. Estado general
 
-| Fase | Contenido                                           | Rama sugerida                    | Depende de | Estado                              |
-| ---- | --------------------------------------------------- | -------------------------------- | ---------- | ----------------------------------- |
-| P    | Cerrar `deleteCategory` y sincronizar documentación | `feature/daleteCategory`         | —          | Mergeada; falta P.2 (documentación) |
-| F0   | Decisiones y modelos documentados (sin código)      | `docs/identity-access-design`    | P          | Lista para PR                       |
-| F1   | Base de identidad: `profiles`                       | `feature/identity-profiles`      | F0         | Pendiente                           |
-| F2   | Roles, permisos y funciones de autorización         | `feature/roles-permissions`      | F1         | Pendiente                           |
-| F3   | Migrar `categories` a permisos                      | `feature/categories-permissions` | F2         | Pendiente                           |
-| F4   | Auditoría (`audit_logs` + triggers)                 | `feature/audit-logs`             | F3         | Pendiente                           |
-| F5   | Protecciones, RPC administrativas y cierre          | `feature/access-hardening`       | F4         | Pendiente                           |
+| Fase | Contenido                                           | Rama sugerida                    | Depende de | Estado                                                                      |
+| ---- | --------------------------------------------------- | -------------------------------- | ---------- | --------------------------------------------------------------------------- |
+| P    | Cerrar `deleteCategory` y sincronizar documentación | `feature/daleteCategory`         | —          | Completada (verificación de HU-CAT-005 diferida a F3.8)                     |
+| F0   | Decisiones y modelos documentados (sin código)      | `docs/identity-access-design`    | P          | Completada (PR mergeado)                                                    |
+| F1   | Base de identidad: `profiles`                       | `feature/identity-profiles`      | F0         | Implementada y verificada en la base; falta comprobar `createCategory` y PR |
+| F2   | Roles, permisos y funciones de autorización         | `feature/roles-permissions`      | F1         | Pendiente                                                                   |
+| F3   | Migrar `categories` a permisos                      | `feature/categories-permissions` | F2         | Pendiente                                                                   |
+| F4   | Auditoría (`audit_logs` + triggers)                 | `feature/audit-logs`             | F3         | Pendiente                                                                   |
+| F5   | Protecciones, RPC administrativas y cierre          | `feature/access-hardening`       | F4         | Pendiente                                                                   |
 
 Una fase = una rama = un PR hacia `develop` (squash), con `pnpm run check:full` en verde. Las migraciones viajan en el mismo PR que el código que las usa y los tipos se regeneran en ese PR (`Git_workflow.md`, sección 8).
 
@@ -46,7 +46,7 @@ Una fase = una rama = un PR hacia `develop` (squash), con `pnpm run check:full` 
 
 1. **No duplicar lo que da Supabase.** Email, contraseña, último ingreso y bloqueo real viven en `auth.users`. Se referencia con `auth.users(id)`; nunca se copian esos campos.
 2. **Cada migración que crea una tabla incluye RLS, políticas y GRANT mínimo.** Sin `GRANT`, RLS ni se evalúa y todo falla con `42501`. Sin `DELETE` en tablas con baja lógica, y sin permisos para `anon`.
-3. **Las migraciones se aplican al proyecto de pruebas** con `pnpm exec supabase db push --remote`; después se regeneran los tipos (`supabase gen types typescript --linked > src/core/types/database.types.ts`). Nunca contra producción desde `develop`.
+3. **Las migraciones se aplican al proyecto de pruebas** con `pnpm exec supabase db push --remote` (antes, `--dry-run`); después se regeneran los tipos con el comando seguro de `PROGRESO.md` (`--project-id`, vía archivo temporal; nunca redirigir directo a `database.types.ts`). Nunca contra producción desde `develop`.
 4. **Una migración nueva por cambio; no se edita una ya aplicada.** `categories` se modifica con migraciones `alter`, no recreándola.
 5. **Orden seguro en cambios de acceso:** primero se crea lo nuevo, se prueba con el usuario admin, y recién después se elimina lo viejo. Así nunca quedás sin acceso.
 6. **Funciones `SECURITY DEFINER`:** `set search_path` fijo, nombres calificados con esquema, y `REVOKE EXECUTE ... FROM public, anon` (en Postgres el `EXECUTE` por defecto es de `public`). Las que no deben llamarse desde la API van en el esquema `private`, que no debe estar expuesto en la configuración de la API.
@@ -85,7 +85,7 @@ Todas confirmadas el 2026-11-20. Los 6 `Model_*.md`, el DER, `Reglas_de_negocio.
 - [x] **D4. RPC frente a "el Servicio consulta Supabase directo".** Lecturas y escrituras simples siguen el flujo actual (Servicio + cliente Supabase + RLS). `SECURITY DEFINER` + `supabase.rpc()` solo para operaciones sensibles (asignar roles y permisos, cambiar `status`). Escrito en `Convenciones_de_archivos.md` y `Stack_restoDev.md`.
 - [x] **D5. Cómo se sincroniza `banned_until` con `profiles.status`.** API de administración de Auth con una clave `service_role` (solo servidor, validada en `env.ts`, nunca `NEXT_PUBLIC_`). Hoy `service_role` no tiene cliente. Se implementa en F5.2; ahí también se revisa si hace falta algún `GRANT` a `service_role` (hoy no tiene ninguno).
 - [x] **D6. Baja de `profiles` y `roles`.** Usan `status` / `is_active` y no `deleted_at`. Documentado como excepción deliberada en sus modelos.
-- [x] **D7. Alta e invitación.** El enum incluye `pending`; el trigger crea perfiles `active` salvo que venga marcado como invitación; el flujo completo de invitación queda fuera de alcance. A resolver en F1: la marca debe viajar en `raw_app_meta_data` (el usuario no puede editarlo) y hay que confirmar que el registro público de Auth está desactivado.
+- [x] **D7. Alta e invitación.** El enum incluye `pending`; el trigger crea perfiles `active` salvo que venga marcado como invitación; el flujo completo de invitación queda fuera de alcance. Resuelto en F1: la marca viaja en `raw_app_meta_data ->> 'invited' = 'true'` (el usuario no puede editarlo). Pendiente confirmar que el registro público de Auth está desactivado ("Allow new users to sign up").
 - [x] **D8. Primer administrador.** Las migraciones siembran roles y permisos, no usuarios (cada entorno tiene usuarios distintos). La asignación del primer `admin` es un SQL documentado en `docs/database/supabase-cli.md`, ejecutado una vez por entorno (F2.5).
 - [x] **D9. Auditoría: retención y datos sensibles.** Sin purga por ahora (volumen bajo); se revisa antes de auditar tablas con más movimiento, como `orders`. Hoy no hay campos sensibles en las tablas auditadas; el trigger debe poder excluir columnas por tabla si aparece alguno.
 - [x] **D10. Aprobación del DER.** Título corregido (6 tablas propias más `auth.users`), `actor_id` alineado con D3 y marcado como aprobado.
@@ -99,7 +99,7 @@ Todas confirmadas el 2026-11-20. Los 6 `Model_*.md`, el DER, `Reglas_de_negocio.
 - [x] F0.4 Completar `Reglas_de_negocio.md` para los roles y permisos acordados.
 - [x] F0.5 Actualizar `Convenciones_de_archivos.md` y `Stack_restoDev.md` según D4.
 - [x] F0.6 Agregar este plan y el enlace en `PROGRESO.md`.
-- [ ] F0.7 Al copiar los archivos al repo: correr `pnpm format` y `pnpm check:full`, y abrir el PR de documentación hacia `develop`.
+- [x] F0.7 Al copiar los archivos al repo: correr `pnpm format` y `pnpm check:full`, y abrir el PR de documentación hacia `develop`. Mergeado el 2026-11-21.
 - **Impacto en `categories`:** ninguno; solo queda decidido.
 - **Cierre:** decisiones confirmadas y modelos escritos; PR de documentación mergeado.
 
@@ -107,23 +107,25 @@ Todas confirmadas el 2026-11-20. Los 6 `Model_*.md`, el DER, `Reglas_de_negocio.
 
 ### Fase P. Prerrequisito: cerrar `deleteCategory`
 
-La implementación de `deleteCategory` ya está mergeada en `develop`. Falta dejar la documentación al día.
+La implementación de `deleteCategory` ya está mergeada en `develop` y la documentación está al día.
 
 - [x] P.1 Pasar `check:full` en la rama actual y abrir el PR hacia `develop`.
-- [ ] P.2 Sincronizar `PROGRESO.md` (estado real de `deleteCategory`), `Estructura_de_carpetas.md` (faltan `deleteCategory.action.ts`, `.schema.ts`, `.service.ts` y `Contract_deleteCategory.md`) y la tabla de verificación de HU-CAT-005.
+- [x] P.2 Sincronizar `PROGRESO.md` (estado real de `deleteCategory`), `Estructura_de_carpetas.md` (agregados `deleteCategory.action.ts`, `.schema.ts`, `.service.ts` y `Contract_deleteCategory.md`) y el estado de HU-CAT-005. **La tabla de verificación de HU-CAT-005 se completa en F3.8**, cuando haya permisos reales, para probar todo junto.
 - [x] P.3 Mergear en `develop` y crear la rama de la Fase 0 desde ahí (la rama con el typo `daleteCategory` se borra al mergear).
 - **Impacto en `categories`:** cierra la operación de baja con permiso provisorio, tal como está documentada.
 
 ### Fase 1. Base de identidad: `profiles`
 
-- [ ] F1.1 Rama `feature/identity-profiles` desde `develop`.
-- [ ] F1.2 Migración: enum `profile_status` (`pending`, `active`, `inactive`) y tabla `profiles` (`id` PK y FK a `auth.users` con `ON DELETE CASCADE`, `full_name` 2–120 tras `btrim`, `phone` ≤ 30, `avatar_path`, `status` default `'pending'` según D7, `created_at`, `updated_at`), índice `(status)`.
-- [ ] F1.3 Trigger `set_updated_at` reutilizando `public.set_updated_at()` (ya existe).
-- [ ] F1.4 `ENABLE ROW LEVEL SECURITY`; política de lectura del propio perfil (`id = (select auth.uid())`); `GRANT select` a `authenticated`; **sin** escritura directa desde la API.
-- [ ] F1.5 Función `handle_new_auth_user` (`SECURITY DEFINER`, `search_path` fijo) y trigger `AFTER INSERT ON auth.users`; `REVOKE EXECUTE` de la función. Definir dónde viaja la marca de invitación (D7) y probar que el trigger sobre `auth.users` se aplica con `db push --remote`.
-- [ ] F1.6 **Backfill** de los usuarios que ya existen en `auth.users` (incluido el de pruebas): `status = 'active'`, `full_name` tomado de `raw_user_meta_data` o, si falta, de la parte local del email (debe cumplir el CHECK de 2–120).
-- [ ] F1.7 Regenerar `database.types.ts`; actualizar `Model_profile.md`, lista de migraciones en `Estructura_de_carpetas.md` y `PROGRESO.md`.
-- **Verificación:** un usuario nuevo recibe perfil; el usuario existente tiene perfil `active`; un usuario lee su perfil y no el ajeno; un `UPDATE` directo falla con `42501`; `check:full`.
+Migraciones: `20261121130112_create_profiles.sql` (F1.2 a F1.5) y `20261121130136_backfill_profiles.sql` (F1.6).
+
+- [x] F1.1 Rama `feature/identity-profiles` desde `develop`.
+- [x] F1.2 Migración: enum `profile_status` (`pending`, `active`, `inactive`) y tabla `profiles` (`id` PK y FK a `auth.users` con `ON DELETE CASCADE`, `full_name` 2–120 tras `btrim`, `phone` ≤ 30, `avatar_path`, `status` default `'pending'` según D7, `created_at`, `updated_at`), índice `(status)`.
+- [x] F1.3 Trigger `set_updated_at` reutilizando `public.set_updated_at()` (ya existe).
+- [x] F1.4 `ENABLE ROW LEVEL SECURITY`; política de lectura del propio perfil (`id = (select auth.uid())`); `GRANT select` a `authenticated`; **sin** escritura directa desde la API.
+- [x] F1.5 Función `handle_new_auth_user` (`SECURITY DEFINER`, `search_path` fijo) y trigger `AFTER INSERT ON auth.users`; `REVOKE EXECUTE` de la función. Marca de invitación (D7) en `raw_app_meta_data ->> 'invited'`; el trigger sobre `auth.users` se aplicó sin problemas con `db push --remote`.
+- [x] F1.6 **Backfill** de los usuarios que ya existen en `auth.users` (incluido el de pruebas): `status = 'active'`, `full_name` tomado de `raw_user_meta_data` o, si falta, de la parte local del email (debe cumplir el CHECK de 2–120).
+- [x] F1.7 Regenerar `database.types.ts`; actualizar `Model_profile.md`, lista de migraciones en `Estructura_de_carpetas.md` y `PROGRESO.md`.
+- **Verificación (2026-11-21, proyecto de pruebas):** el usuario existente tiene perfil `active`; un usuario nuevo recibe perfil `active`; borrar la cuenta elimina el perfil (cascada); un usuario lee su perfil y no el ajeno; `UPDATE` directo, llamada a `handle_new_auth_user` y lectura como `anon` fallan con `42501`; `format` y `check:full` en verde. **Pendiente:** alta `pending` por invitación y `CHECK` de longitud (no probados), y comprobar que crear una categoría sigue funcionando.
 - **Impacto en `categories`:** ninguno funcional. Comprobar que crear una categoría sigue funcionando.
 
 ### Fase 2. Roles y permisos
@@ -156,7 +158,7 @@ Es una migración de alteración, no de recreación. Orden obligatorio:
   - `getCategoryAction`, `listCategoriesAction`: exigen `categories.read`, y `categories.manage` si `include_deleted` es `true`.
   - El permiso se comprueba **antes** de validar con Zod y devuelve `FORBIDDEN` con los mensajes ya documentados.
 - [ ] F3.7 `/admin`: mostrar el nombre del perfil en lugar de "Hola ADMINISTRADOR" y exigir `admin.access` en el layout o la página (no en el proxy).
-- [ ] F3.8 Documentación: `Model_category.md` (Seguridad y bloque provisorio), los 5 `Contract_*Category.md`, `Contract_categories.md`, las 5 HU (`Permiso actual` y `Pendiente`) y `PROGRESO.md` (cerrar las decisiones abiertas de roles, RLS provisoria y `/admin`).
+- [ ] F3.8 Documentación: `Model_category.md` (Seguridad y bloque provisorio), los 5 `Contract_*Category.md`, `Contract_categories.md`, las 5 HU (`Permiso actual` y `Pendiente`) y `PROGRESO.md` (cerrar las decisiones abiertas de roles, RLS provisoria y `/admin`). **Incluye completar la tabla de verificación de HU-CAT-005** (diferida desde P.2), probando sus criterios junto con la matriz de la sección 7; el criterio 9 sigue pendiente hasta que exista `products`.
 - **Verificación:** la matriz de la sección 7 completa para las 5 operaciones, vía Action y vía `GET /api/categories`; escrituras directas a la Data API sin permiso fallan; `check:full`.
 - **Impacto en `categories`:** es la fase donde cambia: política, FK, Actions, front y documentación.
 
@@ -200,7 +202,7 @@ Se ejecuta en F2 (funciones), F3 (categories) y F5 (todas las tablas). Se anota 
 
 Además, para cada tabla expuesta: intentar escribir **sin pasar por la Action** (directo a la Data API) con cada usuario.
 
-**Cómo probar RLS sin Docker:** en el SQL Editor del proyecto de pruebas, dentro de una transacción, usar `set local role authenticated;` y `set local request.jwt.claims = '{"sub":"<uuid del usuario>"}';`, ejecutar la consulta y hacer `rollback`.
+**Cómo probar RLS sin Docker:** en el SQL Editor del proyecto de pruebas, dentro de una transacción, usar `set local role authenticated;` y `set local request.jwt.claims = '{"sub":"<uuid del usuario>"}';`, ejecutar la consulta y hacer `rollback`. Alternativa que muestra todos los resultados juntos: un bloque `do $$ ... $$` que cambia de rol con `set_config('role', ..., true)`, acumula los resultados en un texto y termina con `raise exception` (así se deshace todo y el mensaje trae el resumen); se usó en F1.
 
 ## 8. Trampas conocidas (leer antes de cada fase)
 
@@ -210,14 +212,18 @@ Además, para cada tabla expuesta: intentar escribir **sin pasar por la Action**
 - **T4. `GRANT` olvidado = `42501` en todo.** Se revisa en cada tabla y función nueva.
 - **T5. `SECURITY DEFINER` sin `REVOKE` queda invocable por cualquiera** desde la API.
 - **T6. Protecciones demasiado tempranas bloquean el seed.** Anti-escalada y guardia del último admin van en F5, después de sembrar.
-- **T7. Tipos generados.** Las funciones de `private` no aparecen en `database.types.ts`; las RPC de `public` sí. Regenerar tras cada migración.
+- **T7. Tipos generados.** Las funciones de `private` no aparecen en `database.types.ts`; las RPC de `public` sí. Regenerar tras cada migración, con el comando seguro (T10).
 - **T8. Caché de tipos de Next.** Si se borra o mueve una `page.tsx` (F3.7), parar `pnpm dev`, borrar `.next` y volver a correr.
 - **T9. `cacheComponents`** conserva el estado de páginas ya visitadas: si `/admin` pasa a depender del perfil, evitar `new Date()` en Server Components y revisar que no muestre datos de una sesión anterior tras cerrar sesión.
+- **T10. Redirigir `gen types` directo al archivo lo vacía si el comando falla.** `supabase gen types typescript --linked` falla con "Cannot find project ref". Usar `--project-id` y un archivo temporal (`> /tmp/db.types.ts && mv ...`). Recuperación: `git checkout -- src/core/types/database.types.ts`.
 
 ## 9. Registro de cambios
 
-| Fecha      | Cambio                                                                                                                                                          |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-20 | Archivo creado con el plan por fases, decisiones y matriz de pruebas                                                                                            |
-| 2026-11-20 | F0: confirmadas D1, D3, D5 y D9; escritos los 6 modelos (F0.2) y `Reglas_de_negocio.md` (F0.4)                                                                  |
-| 2026-11-20 | F0: confirmadas D2, D4, D6, D7, D8, D10 y D11; DER corregido (F0.3), convenciones y stack (F0.5) y `PROGRESO.md` (F0.6) actualizados. `deleteCategory` mergeada |
+| Fecha      | Cambio                                                                                                                                                                            |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-20 | Archivo creado con el plan por fases, decisiones y matriz de pruebas                                                                                                              |
+| 2026-11-20 | F0: confirmadas D1, D3, D5 y D9; escritos los 6 modelos (F0.2) y `Reglas_de_negocio.md` (F0.4)                                                                                    |
+| 2026-11-20 | F0: confirmadas D2, D4, D6, D7, D8, D10 y D11; DER corregido (F0.3), convenciones y stack (F0.5) y `PROGRESO.md` (F0.6) actualizados. `deleteCategory` mergeada                   |
+| 2026-11-21 | Fase P completada: documentación de `deleteCategory` sincronizada (P.2). La tabla de verificación de HU-CAT-005 se difiere a F3.8                                                 |
+| 2026-11-21 | F0 completada: PR de documentación mergeado en `develop` (F0.7)                                                                                                                   |
+| 2026-11-21 | F1: migraciones `create_profiles` y `backfill_profiles` aplicadas al proyecto de pruebas y verificadas; D7 resuelta (marca `invited` en `raw_app_meta_data`); trampa T10 agregada |

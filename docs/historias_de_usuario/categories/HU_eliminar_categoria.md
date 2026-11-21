@@ -1,8 +1,9 @@
 # HU-CAT-005 — Eliminar categoría (baja lógica)
 
-> Estado: Implementada parcialmente. El contrato, la Action, el schema y el Servicio existen; los
-> criterios 8 y 10 se implementaron según la propuesta y siguen pendientes de confirmar. La regla
-> de productos activos (criterio 9) depende de la tabla `products`, que todavía no existe.
+> Estado: Implementada parcialmente y mergeada en `develop`. El contrato, la Action, el schema y el
+> Servicio existen; los criterios 8 y 10 se implementaron según la propuesta y siguen pendientes de
+> confirmar. La regla de productos activos (criterio 9) depende de la tabla `products`, que todavía
+> no existe. La tabla de verificación todavía no se completó.
 
 ## Historia
 
@@ -54,14 +55,17 @@ que ya no corresponde al menú sin perder su historial**.
 ## Alcance actual y pendientes
 
 - **Permiso actual (propuesto):** cualquier usuario autenticado, igual que el resto de `categories`.
-- **Permiso previsto:** rol `admin` (`TODO(roles)`).
-- **Implementado:** contrato, schema, Servicio y Action (`deleteCategoryAction`). La baja es un
-  único `UPDATE` atómico con `deleted_at IS NULL` y `active = false`; el Servicio distingue
-  `NOT_FOUND` y los dos `CONFLICT` (ya dada de baja / sigue activa) con una consulta posterior. No
-  requirió migración: el `GRANT` de `UPDATE` ya existe y no hay `GRANT` de `DELETE`.
+- **Permiso previsto:** `categories.manage` (reemplaza al `TODO(roles)`; se implementa en la Fase 3
+  de [`Plan_identidad_y_permisos`](../../Plan_identidad_y_permisos.md)).
+- **Implementado y mergeado en `develop`:** contrato, schema, Servicio y Action
+  (`deleteCategoryAction`). La baja es un único `UPDATE` atómico con `deleted_at IS NULL` y
+  `active = false`; el Servicio distingue `NOT_FOUND` y los dos `CONFLICT` (ya dada de baja / sigue
+  activa) con una consulta posterior. No requirió migración: el `GRANT` de `UPDATE` ya existe y no
+  hay `GRANT` de `DELETE`.
 - **Pendiente:** la regla de productos activos (criterio 9), que debe crearse en la base junto con
   `products`; el endpoint (a definir); la pantalla/botón en el front (flujo: desactivar y luego dar
-  de baja); la auditoría; y ejecutar las verificaciones de la tabla de abajo.
+  de baja); la verificación por permiso real (Fase 3); la auditoría (Fase 4); y completar la tabla de
+  verificación de abajo.
 - La regla de inactividad (criterio 12) hoy la aplica el Servicio; una escritura directa por la Data
   API podría saltearla. Evaluar un `CHECK (deleted_at is null or active = false)` en la base.
 - Hasta que exista la restauración, una categoría dada de baja solo se puede renombrar

@@ -13,6 +13,7 @@ restoDev/
 │   │   ├── categories/
 │   │   │   ├── Contract_categories.md
 │   │   │   ├── Contract_createCategory.md
+│   │   │   ├── Contract_deleteCategory.md
 │   │   │   ├── Contract_getCategory.md
 │   │   │   ├── Contract_listCategories.md
 │   │   │   └── Contract_updateCategory.md
@@ -20,8 +21,15 @@ restoDev/
 │   │   └── Contract_template.md
 │   ├── database/
 │   │   ├── model/
+│   │   │   ├── Model_audit_log.md
 │   │   │   ├── Model_category.md
-│   │   │   └── Model_template.md
+│   │   │   ├── Model_permission.md
+│   │   │   ├── Model_profile.md
+│   │   │   ├── Model_role.md
+│   │   │   ├── Model_role_permission.md
+│   │   │   ├── Model_template.md
+│   │   │   └── Model_user_role.md
+│   │   ├── DER_identidad_acceso_auditoria.html
 │   │   └── supabase-cli.md
 │   ├── historias_de_usuario/
 │   │   ├── categories/
@@ -36,6 +44,7 @@ restoDev/
 │   ├── Estructura_de_carpetas.md
 │   ├── Git_workflow.md
 │   ├── Guia_de_desarrollo_de_funcionalidades.md
+│   ├── Plan_identidad_y_permisos.md
 │   ├── Reglas_de_negocio.md
 │   └── Stack_restoDev.md
 ├── src/
@@ -45,6 +54,7 @@ restoDev/
 │   │   │   └── logout.action.ts
 │   │   └── categories/
 │   │       ├── createCategory.action.ts
+│   │       ├── deleteCategory.action.ts
 │   │       ├── getCategory.action.ts
 │   │       ├── listCategories.action.ts
 │   │       └── updateCategory.action.ts
@@ -78,6 +88,7 @@ restoDev/
 │   │   │   │   └── login.schema.ts
 │   │   │   └── categories/
 │   │   │       ├── createCategory.schema.ts
+│   │   │       ├── deleteCategory.schema.ts
 │   │   │       ├── getCategory.schema.ts
 │   │   │       ├── index.ts
 │   │   │       ├── listCategories.schema.ts
@@ -89,6 +100,7 @@ restoDev/
 │   │   │   │   └── logout.service.ts
 │   │   │   └── categories/
 │   │   │       ├── createCategory.service.ts
+│   │   │       ├── deleteCategory.service.ts
 │   │   │       ├── getCategory.service.ts
 │   │   │       ├── index.ts
 │   │   │       ├── listCategories.service.ts
@@ -121,7 +133,9 @@ restoDev/
 │   ├── migrations/
 │   │   ├── 20261114201957_create_categories.sql
 │   │   ├── 20261115014333_grant_categories_privileges.sql
-│   │   └── 20261118224842_categories_length_checks.sql
+│   │   ├── 20261118224842_categories_length_checks.sql
+│   │   ├── 20261121130112_create_profiles.sql
+│   │   └── 20261121130136_backfill_profiles.sql
 │   ├── .gitignore
 │   └── config.toml
 ├── .env.example
