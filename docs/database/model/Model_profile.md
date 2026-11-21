@@ -2,17 +2,18 @@
 
 ## Estructura
 
-| Campo         | Tipo             | Nulo | Default     |
-| ------------- | ---------------- | ---- | ----------- |
-| `id` (PK)     | `uuid`           | No   | —           |
-| `full_name`   | `text`           | No   | —           |
-| `phone`       | `text`           | Sí   | —           |
-| `avatar_path` | `text`           | Sí   | —           |
-| `status`      | `profile_status` | No   | `'pending'` |
-| `created_at`  | `timestamptz`    | No   | `now()`     |
-| `updated_at`  | `timestamptz`    | No   | `now()`     |
+| Campo         | Tipo             | Longitud | Nulo | Default     |
+| ------------- | ---------------- | -------- | ---- | ----------- |
+| `id` (PK)     | `uuid`           | —        | No   | —           |
+| `full_name`   | `text`           | 2–120    | No   | —           |
+| `phone`       | `text`           | ≤ 30     | Sí   | —           |
+| `avatar_path` | `text`           | —        | Sí   | —           |
+| `status`      | `profile_status` | —        | No   | `'pending'` |
+| `created_at`  | `timestamptz`    | —        | No   | `now()`     |
+| `updated_at`  | `timestamptz`    | —        | No   | `now()`     |
 
 > `id` no tiene default: es el mismo UUID de la cuenta en `auth.users`. No hay `deleted_at`, `created_by` ni `updated_by`: la baja se expresa con `status` (D6) y la autoría de cada cambio queda en `audit_logs`. `email`, contraseña, último ingreso y bloqueo real viven en `auth.users` y no se copian.
+> La longitud se mide tras `btrim` y la aplica un `CHECK` (ver Constraints); no se usa `varchar(n)`.
 
 Enum `profile_status`: `pending` (invitado que no completó el alta), `active` (puede operar), `inactive` (bloqueado y archivado).
 

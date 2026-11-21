@@ -2,18 +2,19 @@
 
 ## Estructura
 
-| Campo        | Tipo          | Nulo | Default                        |
-| ------------ | ------------- | ---- | ------------------------------ |
-| `id` (PK)    | `bigint`      | No   | `GENERATED ALWAYS AS IDENTITY` |
-| `actor_id`   | `uuid`        | Sí   | —                              |
-| `action`     | `text`        | No   | —                              |
-| `table_name` | `text`        | No   | —                              |
-| `record_id`  | `text`        | Sí   | —                              |
-| `old_data`   | `jsonb`       | Sí   | —                              |
-| `new_data`   | `jsonb`       | Sí   | —                              |
-| `created_at` | `timestamptz` | No   | `now()`                        |
+| Campo        | Tipo          | Longitud                      | Nulo | Default                        |
+| ------------ | ------------- | ----------------------------- | ---- | ------------------------------ |
+| `id` (PK)    | `bigint`      | —                             | No   | `GENERATED ALWAYS AS IDENTITY` |
+| `actor_id`   | `uuid`        | —                             | Sí   | —                              |
+| `action`     | `text`        | `insert`, `update` o `delete` | No   | —                              |
+| `table_name` | `text`        | —                             | No   | —                              |
+| `record_id`  | `text`        | —                             | Sí   | —                              |
+| `old_data`   | `jsonb`       | —                             | Sí   | —                              |
+| `new_data`   | `jsonb`       | —                             | Sí   | —                              |
+| `created_at` | `timestamptz` | —                             | No   | `now()`                        |
 
 > Solo inserción. Sin `updated_at`, `deleted_at` ni `updated_by`: un evento nunca se modifica. `id` es `bigint` (orden cronológico y volumen alto) y no `uuid`.
+> `table_name` y `record_id` no tienen tope: los fija el trigger a partir de la tabla auditada, y `record_id` puede ser compuesto (`"user_id:role_id"`).
 
 ## Constraints e índices
 

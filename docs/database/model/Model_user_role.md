@@ -2,12 +2,13 @@
 
 ## Estructura
 
-| Campo          | Tipo   | Nulo | Default |
-| -------------- | ------ | ---- | ------- |
-| `user_id` (PK) | `uuid` | No   | —       |
-| `role_id` (PK) | `uuid` | No   | —       |
+| Campo          | Tipo   | Longitud | Nulo | Default |
+| -------------- | ------ | -------- | ---- | ------- |
+| `user_id` (PK) | `uuid` | —        | No   | —       |
+| `role_id` (PK) | `uuid` | —        | No   | —       |
 
 > Tabla puente N:M entre usuarios y roles. Sin `assigned_by` ni `assigned_at`: ambos datos están en `audit_logs`. Si el panel llega a necesitar "tiene el rol desde…", se agrega `assigned_at` en ese momento.
+> No tiene campos de texto, así que no hay longitudes que acotar.
 
 ## Constraints e índices
 

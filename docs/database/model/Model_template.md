@@ -2,18 +2,19 @@
 
 ## Estructura
 
-| Campo     | Tipo     | Nulo      | Default       |
-| --------- | -------- | --------- | ------------- |
-| `id` (PK) | `[tipo]` | No        | `[valor o —]` |
-| `[campo]` | `[tipo]` | `[Sí/No]` | `[valor o —]` |
+| Campo     | Tipo     | Longitud               | Nulo      | Default       |
+| --------- | -------- | ---------------------- | --------- | ------------- |
+| `id` (PK) | `[tipo]` | `—`                    | No        | `[valor o —]` |
+| `[campo]` | `[tipo]` | `[mín–máx, ≤ máx o —]` | `[Sí/No]` | `[valor o —]` |
 
 > Incluir únicamente los campos que necesita esta tabla. No asumir que todas requieren `id`, `deleted_at`, `updated_by` o marcas de tiempo: justificar su presencia según su función.
+> **Longitud:** solo para campos de texto. Es un resumen del `CHECK` de «Constraints e índices», donde se define el límite una sola vez; se usa `text` con `CHECK`, no `varchar(n)`. Poner `—` si el campo no es de texto o no tiene tope, y el formato si lo acota una expresión regular.
 
 ## Constraints e índices
 
 - **Clave primaria:** `[campo o clave compuesta]`.
 - **Unicidad:** `[campos, alcance y tratamiento de registros dados de baja, si aplica]`.
-- **Checks:** `[restricciones de formato, rango y consistencia]`.
+- **Checks:** `[restricciones de formato, longitud, rango y consistencia]`.
 - **Claves foráneas:** `[campo]` → `[esquema.tabla(campo)]`; comportamiento de actualización/borrado: `[regla]`.
 - **Índices adicionales:** `[columnas y finalidad; solo si hacen falta]`.
 
@@ -53,7 +54,7 @@
 **Criterios para completar este modelo**
 
 1. Sustituir los textos entre corchetes y eliminar los apartados que no correspondan; no dejar reglas de ejemplo como si fueran definitivas.
-2. Documentar cada restricción una sola vez en su sección; en «Validaciones» describir cómo comprobarla, sin redefinirla.
+2. Documentar cada restricción una sola vez en su sección; en «Validaciones» describir cómo comprobarla, sin redefinirla. La columna «Longitud» de «Estructura» resume los límites, pero el `CHECK` se define en «Constraints e índices».
 3. Especificar claramente si la unicidad considera registros dados de baja; no asumir índices parciales.
 4. Mantener las bajas de negocio como lógicas donde exista eliminación, especificando sus bloqueos. Nunca describir borrados físicos como parte del flujo de negocio.
 5. Referenciar las tablas de Supabase con su esquema correcto, por ejemplo `auth.users(id)`.

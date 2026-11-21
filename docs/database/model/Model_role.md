@@ -2,24 +2,25 @@
 
 ## Estructura
 
-| Campo         | Tipo          | Nulo | Default             |
-| ------------- | ------------- | ---- | ------------------- |
-| `id` (PK)     | `uuid`        | No   | `gen_random_uuid()` |
-| `code`        | `text`        | No   | —                   |
-| `name`        | `text`        | No   | —                   |
-| `description` | `text`        | Sí   | —                   |
-| `is_system`   | `boolean`     | No   | `false`             |
-| `is_active`   | `boolean`     | No   | `true`              |
-| `created_at`  | `timestamptz` | No   | `now()`             |
-| `updated_at`  | `timestamptz` | No   | `now()`             |
+| Campo         | Tipo          | Longitud | Nulo | Default             |
+| ------------- | ------------- | -------- | ---- | ------------------- |
+| `id` (PK)     | `uuid`        | —        | No   | `gen_random_uuid()` |
+| `code`        | `text`        | 2–50     | No   | —                   |
+| `name`        | `text`        | 2–60     | No   | —                   |
+| `description` | `text`        | ≤ 250    | Sí   | —                   |
+| `is_system`   | `boolean`     | —        | No   | `false`             |
+| `is_active`   | `boolean`     | —        | No   | `true`              |
+| `created_at`  | `timestamptz` | —        | No   | `now()`             |
+| `updated_at`  | `timestamptz` | —        | No   | `now()`             |
 
 > Sin `created_by` ni `deleted_at`: la autoría queda en `audit_logs` y la desactivación se expresa con `is_active` (D6). `id` es interno y estable; el código técnico es `code`.
+> La longitud la aplica un `CHECK` (ver Constraints); no se usa `varchar(n)`.
 
 ## Constraints e índices
 
 - **Clave primaria:** `id`.
 - **Unicidad:** `code` único; `lower(name)` único (índice sobre la expresión). No hay baja lógica, así que la unicidad cubre todos los registros.
-- **Checks:** `code ~ '^[a-z][a-z0-9_.-]{1,49}$'`; `length(btrim(name)) BETWEEN 2 AND 60`; `length(description) <= 250`.
+- **Checks:** `code ~ '^[a-z][a-z0-9_.-]{1,49}$'` (2 a 50 caracteres); `length(btrim(name)) BETWEEN 2 AND 60`; `length(description) <= 250`.
 - **Claves foráneas:** ninguna.
 - **Índices adicionales:** ninguno; los índices únicos cubren las búsquedas.
 

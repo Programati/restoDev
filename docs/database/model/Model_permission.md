@@ -2,14 +2,15 @@
 
 ## Estructura
 
-| Campo         | Tipo   | Nulo | Default |
-| ------------- | ------ | ---- | ------- |
-| `code` (PK)   | `text` | No   | —       |
-| `module`      | `text` | No   | —       |
-| `name`        | `text` | No   | —       |
-| `description` | `text` | Sí   | —       |
+| Campo         | Tipo   | Longitud                | Nulo | Default |
+| ------------- | ------ | ----------------------- | ---- | ------- |
+| `code` (PK)   | `text` | formato `modulo.accion` | No   | —       |
+| `module`      | `text` | —                       | No   | —       |
+| `name`        | `text` | 2–80                    | No   | —       |
+| `description` | `text` | ≤ 250                   | Sí   | —       |
 
 > Catálogo fijo, sembrado por migraciones. La clave natural `code` evita un `id` sin uso y hace legibles las políticas y `role_permissions`. Sin marcas de tiempo ni baja: un permiso que ya no se usa se retira con una migración.
+> `code` y `module` no tienen tope de longitud: los acota su formato (ver Constraints). La longitud la aplica un `CHECK`; no se usa `varchar(n)`.
 
 ## Constraints e índices
 

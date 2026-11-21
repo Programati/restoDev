@@ -2,12 +2,13 @@
 
 ## Estructura
 
-| Campo                  | Tipo   | Nulo | Default |
-| ---------------------- | ------ | ---- | ------- |
-| `role_id` (PK)         | `uuid` | No   | —       |
-| `permission_code` (PK) | `text` | No   | —       |
+| Campo                  | Tipo   | Longitud                | Nulo | Default |
+| ---------------------- | ------ | ----------------------- | ---- | ------- |
+| `role_id` (PK)         | `uuid` | —                       | No   | —       |
+| `permission_code` (PK) | `text` | formato `modulo.accion` | No   | —       |
 
 > Tabla puente N:M. Sin `id`, `assigned_at` ni `assigned_by`: la clave compuesta identifica la fila y quién concedió el permiso y cuándo se obtiene de `audit_logs`.
+> `permission_code` hereda el formato de `permissions.code` por la clave foránea; no tiene `CHECK` propio.
 
 ## Constraints e índices
 
