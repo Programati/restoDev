@@ -1,5 +1,7 @@
 # role_permissions
 
+> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger anti-escalada llega en la Fase 5.
+
 ## Estructura
 
 | Campo                  | Tipo   | Longitud                | Nulo | Default |
@@ -18,7 +20,7 @@
 - **Claves foráneas:**
   - `role_id` → `roles(id)`; `ON DELETE CASCADE`.
   - `permission_code` → `permissions(code)`; `ON UPDATE CASCADE ON DELETE RESTRICT`.
-- **Índices adicionales:** `(permission_code, role_id)` para saber a qué roles pertenece un permiso.
+- **Índices adicionales:** `role_permissions_permission_code_role_id_idx` sobre `(permission_code, role_id)` para saber a qué roles pertenece un permiso.
 
 ## Relaciones
 
@@ -27,7 +29,7 @@
 
 ## Reglas de negocio
 
-- El rol `admin` tiene todos los permisos del catálogo; el seed los asigna.
+- El rol `admin` tiene todos los permisos del catálogo; el seed los asigna (hoy 6 filas).
 - Modificar permisos de un rol requiere `roles.manage`.
 - Los permisos de un rol inactivo no se aplican, aunque las filas existan.
 - **Bajas:** no aplica baja lógica; quitar un permiso a un rol es borrar la fila, y queda en `audit_logs`.
@@ -37,10 +39,10 @@
 ## Seguridad
 
 - **RLS:** habilitada desde la creación de la tabla.
-- **Lectura:** `roles.manage`.
+- **Lectura:** `roles.manage` (política `role_permissions_select_roles_manage`).
 - **Inserción, actualización y borrado:** sin `GRANT` directo; solo por RPC con `roles.manage`. Es la tabla más sensible del dominio: define quién puede hacer qué.
 - **Anti-escalada (F5):** trigger `BEFORE INSERT/UPDATE/DELETE` que exige `roles.manage` y bloquea la autoasignación. Debe permitir migraciones y seed (sin `auth.uid()`), por eso se agrega después de sembrar.
-- Sin permisos para `anon`; sin Realtime.
+- **GRANT:** solo `select` a `authenticated`; nada para `anon`; sin Realtime.
 
 ## Validaciones
 
@@ -50,6 +52,8 @@
 - Renombrar un `permission_code` en el catálogo se propaga.
 - RLS: sin `roles.manage` no se lee ni se escribe directo (`42501`); `anon` no accede.
 - Cada alta o baja genera un evento con `record_id` compuesto (F4).
+
+**Verificado el 2026-11-21 en el proyecto de pruebas:** el seed repetido deja 6 relaciones; el admin lee las 6; un usuario sin rol lee 0. Pendiente de probar: par duplicado, referencias inexistentes, cascada y `RESTRICT`.
 
 ## Impacto en `categories`
 

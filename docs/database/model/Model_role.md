@@ -1,5 +1,7 @@
 # roles
 
+> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger de `is_system` y las RPC de escritura llegan en la Fase 5.
+
 ## Estructura
 
 | Campo         | Tipo          | Longitud | Nulo | Default             |
@@ -19,8 +21,8 @@
 ## Constraints e índices
 
 - **Clave primaria:** `id`.
-- **Unicidad:** `code` único; `lower(name)` único (índice sobre la expresión). No hay baja lógica, así que la unicidad cubre todos los registros.
-- **Checks:** `code ~ '^[a-z][a-z0-9_.-]{1,49}$'` (2 a 50 caracteres); `length(btrim(name)) BETWEEN 2 AND 60`; `length(description) <= 250`.
+- **Unicidad:** `code` único; `lower(name)` único (índice `roles_name_lower_key` sobre la expresión). No hay baja lógica, así que la unicidad cubre todos los registros.
+- **Checks:** `roles_code_format` (`code ~ '^[a-z][a-z0-9_.-]{1,49}$'`, 2 a 50 caracteres); `roles_name_length` (`length(btrim(name)) BETWEEN 2 AND 60`); `roles_description_length` (`length(description) <= 250`).
 - **Claves foráneas:** ninguna.
 - **Índices adicionales:** ninguno; los índices únicos cubren las búsquedas.
 
@@ -32,28 +34,31 @@
 
 ## Reglas de negocio
 
-- **Roles sembrados (D1):** solo `admin`, con `is_system = true` y todos los permisos del catálogo. `staff`, `delivery`, cajero y mesero se agregan junto con el módulo que los necesite.
-- Un rol `is_system` no se borra, no cambia de `code` y no se desactiva. La regla va en un trigger `BEFORE UPDATE OR DELETE` (F5), no solo en RPC, para que no se pueda saltear por la Data API.
+- **Roles sembrados (D1):** solo `admin` (nombre "Administrador"), con `is_system = true` y todos los permisos del catálogo. `staff`, `delivery`, cajero y mesero se agregan junto con el módulo que los necesite.
+- Un rol `is_system` no se borra, no cambia de `code` y no se desactiva. La regla va en un trigger `BEFORE UPDATE OR DELETE` (F5), no solo en RPC, para que no se pueda saltear por la Data API. **Hasta F5 esta protección no existe.**
 - Los permisos de un rol con `is_active = false` no se aplican.
 - **Bajas:** no hay baja lógica con `deleted_at`; se desactiva con `is_active`. El borrado físico solo es posible para roles no `is_system` y sin asignaciones, por RPC con `roles.manage`.
-- **Trazabilidad:** `updated_at` con `public.set_updated_at()`; cambios en `audit_logs` desde F4.
+- **Trazabilidad:** `updated_at` con `public.set_updated_at()` (trigger `roles_set_updated_at`); cambios en `audit_logs` desde F4.
 
 ## Seguridad
 
 - **RLS:** habilitada desde la creación de la tabla.
-- **Lectura:** usuarios autenticados con perfil activo (el panel necesita mostrar nombres de rol).
+- **Lectura:** usuarios autenticados con perfil activo (política `roles_select_active_users`; el panel necesita mostrar nombres de rol).
 - **Inserción, actualización y borrado:** sin `GRANT` directo; solo `roles.manage` por RPC (`admin_create_role`, `admin_update_role`, `admin_delete_role`, F5). El seed lo hace la migración.
-- **Validación en base de datos:** formato de `code`, longitudes y trigger de `is_system`.
-- Sin permisos para `anon`; sin publicación en Realtime.
+- **GRANT:** solo `select` a `authenticated`; nada para `anon`.
+- **Validación en base de datos:** formato de `code`, longitudes y trigger de `is_system` (F5).
+- Sin publicación en Realtime.
 
 ## Validaciones
 
 - Crear un rol válido; rechazar `code` con mayúsculas, espacios o de 1 carácter.
 - Rechazar `name` duplicado sin distinguir mayúsculas y `code` duplicado.
 - Rechazar borrar un rol con usuarios asignados.
-- Rechazar borrar, renombrar el `code` o desactivar `admin`.
+- Rechazar borrar, renombrar el `code` o desactivar `admin` (F5).
 - Un rol inactivo no concede permisos (`has_permission` devuelve `false`).
 - RLS: usuario autenticado lee; escribir directo falla con `42501`; `anon` no lee.
+
+**Verificado el 2026-11-21 en el proyecto de pruebas:** el seed corre dos veces sin duplicar (1 rol); un rol inactivo no concede permisos; un usuario activo sin rol lee `roles` (1 fila); `anon` es rechazado con `42501`. Pendiente de probar: los `CHECK` de formato y longitud, los duplicados de `code` y `name`, y el borrado con usuarios asignados.
 
 ## Impacto en `categories`
 

@@ -1,5 +1,7 @@
 # permissions
 
+> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas.
+
 ## Estructura
 
 | Campo         | Tipo   | Longitud                | Nulo | Default |
@@ -16,9 +18,9 @@
 
 - **Clave primaria:** `code`.
 - **Unicidad:** la de la clave primaria.
-- **Checks:** `code ~ '^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$'`; `code LIKE module || '.%'` (el módulo no puede contradecir al código); `length(btrim(name)) BETWEEN 2 AND 80`; `length(description) <= 250`.
+- **Checks:** `permissions_code_format` (`code ~ '^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$'`); `permissions_code_module` (`starts_with(code, module || '.')`: el módulo no puede contradecir al código); `permissions_name_length` (`length(btrim(name)) BETWEEN 2 AND 80`); `permissions_description_length` (`length(description) <= 250`).
 - **Claves foráneas:** ninguna.
-- **Índices adicionales:** `(module, name)` para agrupar en la pantalla de roles.
+- **Índices adicionales:** `permissions_module_name_idx` sobre `(module, name)` para agrupar en la pantalla de roles.
 
 ## Relaciones
 
@@ -46,7 +48,7 @@
 ## Seguridad
 
 - **RLS:** habilitada desde la creación de la tabla.
-- **Lectura:** `roles.manage`.
+- **Lectura:** `roles.manage` (política `permissions_select_roles_manage`).
 - **Inserción, actualización y borrado:** ninguno desde la API; solo migraciones. Editar el catálogo en runtime permitiría inventar permisos que nada verifica.
 - Solo `GRANT SELECT` a `authenticated`. Sin permisos para `anon`; sin Realtime.
 - **Validación en base de datos:** formato de `code` y coherencia con `module`.
@@ -57,6 +59,8 @@
 - Rechazar un `code` sin punto, con mayúsculas, o cuyo `module` no coincida.
 - Rechazar borrar un permiso asignado a un rol.
 - RLS: sin `roles.manage` no se lee; escribir directo falla con `42501`.
+
+**Verificado el 2026-11-21 en el proyecto de pruebas:** el seed repetido deja 6 permisos; el admin lee los 6; un usuario sin rol lee 0; `anon` rechazado con `42501`. Pendiente de probar: los `CHECK` de formato, la coherencia con `module` y el borrado de un permiso en uso.
 
 ## Impacto en `categories`
 
