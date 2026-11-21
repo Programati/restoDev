@@ -135,7 +135,11 @@ restoDev/
 │   │   ├── 20261115014333_grant_categories_privileges.sql
 │   │   ├── 20261118224842_categories_length_checks.sql
 │   │   ├── 20261121130112_create_profiles.sql
-│   │   └── 20261121130136_backfill_profiles.sql
+│   │   ├── 20261121130136_backfill_profiles.sql
+│   │   ├── 20261121134100_create_access_tables.sql
+│   │   ├── 20261121134108_create_authorization_functions.sql
+│   │   ├── 20261121134118_seed_roles_permissions.sql
+│   │   └── 20261121135023_create_access_read_policies.sql
 │   ├── .gitignore
 │   └── config.toml
 ├── .env.example

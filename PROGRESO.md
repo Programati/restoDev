@@ -136,6 +136,7 @@
 - [x] Fase 0 del plan de identidad: decisiones D1–D11 confirmadas, 6 modelos, DER corregido, reglas de negocio, convenciones y stack actualizados; PR mergeado en `develop`
 - [x] Fase 1 (`profiles`): migraciones aplicadas, verificación de base completa, `createCategory` comprobado después del cambio y PR mergeado en `develop`
 - [x] Fase 2: migraciones de tablas, funciones de autorización, seed y políticas de lectura aplicadas al proyecto de pruebas; primer admin asignado; verificación de funciones y políticas completa; tipos regenerados; `createCategory` comprobado; `format` y `check:full` aprobados
+- [x] Registro público de Auth ("Allow new users to sign up") desactivado en el proyecto de pruebas el 2026-11-21
 - [ ] Fase 2: abrir y mergear el PR de `feature/roles-permissions`
 - [ ] Definir e implementar la protección de la baja frente a productos activos cuando exista la tabla `products`
 - [ ] Crear `docs/Guia_front.md` si se mantiene como entregable; el archivo todavía no existe
@@ -160,7 +161,7 @@
 - La regla "no dar de baja una categoría con productos activos" debe validarse en la base (no solo en la UI). `products` todavía no existe, así que hay que diseñar la protección junto con su modelo y migración
 - `deleteCategory`: la regla de inactividad (solo se da de baja una categoría con `active = false`) hoy la aplica el Servicio; evaluar un `CHECK (deleted_at is null or active = false)` en la base. Faltan además confirmar los criterios 8 y 10 de HU-CAT-005 y decidir si hace falta una HU de restauración
 - El registro en `audit_logs` queda pendiente hasta la Fase 4 (decisión D9: sin purga por ahora)
-- **Registro público de Auth (D7):** "Allow new users to sign up" estaba **activo** en el proyecto de pruebas. Desactivarlo (Authentication → Sign In / Providers) y revisarlo en cada entorno; mientras esté activo, cualquiera que se registre recibe un perfil `active` y, con la política provisoria de `categories`, puede leer y escribir categorías. Sin confirmar que ya se desactivó
+- Registro público de Auth (D7): desactivado en el proyecto de pruebas el 2026-11-21. Revisarlo en cada entorno nuevo, producción incluido (`docs/database/supabase-cli.md`, sección 8). Los usuarios se crean desde el panel o la API de administración y nacen `active` y sin roles; mientras `categories` tenga la política provisoria, un usuario así puede leer y escribir categorías (se corrige en F3.4)
 - Hasta la Fase 5 las tablas de acceso no tienen trigger de `is_system`, protección anti-escalada ni guardia del último administrador; las escrituras solo se hacen por migración o SQL Editor
 - `profiles` y tablas de acceso: sin probar todavía el alta `pending` por invitación, los `CHECK` de longitud y formato, los duplicados y las cascadas/`RESTRICT`
 - El modelo y el contrato de `categories` documentan límites de `name` (2–80) e `icon_name` (1–50), aplicados también mediante constraints; mantenerlos alineados si cambian
@@ -202,3 +203,4 @@
 | 2026-11-21 | Fase 0 mergeada en `develop`                                                                                                                                                    |
 | 2026-11-21 | Fase 1: migraciones `create_profiles` y `backfill_profiles` aplicadas al proyecto de pruebas, tipos regenerados y verificación de base completa; mergeada                       |
 | 2026-11-21 | Fase 2: tablas de roles y permisos, funciones `private`, seed y políticas de lectura aplicadas y verificadas; primer admin asignado; `supabase-cli.md` actualizada; D12 abierta |
+| 2026-11-21 | Registro público de Auth desactivado en el proyecto de pruebas                                                                                                                  |

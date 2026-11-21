@@ -227,7 +227,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_permission: { Args: { p_code: string }; Returns: boolean }
     }
     Enums: {
       profile_status: "pending" | "active" | "inactive"
