@@ -2,24 +2,27 @@
 
 ## Estructura
 
-| Campo           | Tipo          | Nulo | Default             |
-| --------------- | ------------- | ---- | ------------------- |
-| `id` (PK)       | `uuid`        | No   | `gen_random_uuid()` |
-| `name`          | `citext`      | No   | —                   |
-| `slug`          | `text`        | No   | —                   |
-| `icon_name`     | `text`        | Sí   | —                   |
-| `display_order` | `integer`     | No   | `0`                 |
-| `active`        | `boolean`     | No   | `true`              |
-| `deleted_at`    | `timestamptz` | Sí   | —                   |
-| `created_at`    | `timestamptz` | No   | `now()`             |
-| `updated_at`    | `timestamptz` | No   | `now()`             |
-| `updated_by`    | `uuid`        | Sí   | —                   |
+| Campo           | Tipo          | Longitud             | Nulo | Default             |
+| --------------- | ------------- | -------------------- | ---- | ------------------- |
+| `id` (PK)       | `uuid`        | —                    | No   | `gen_random_uuid()` |
+| `name`          | `citext`      | 2–80                 | No   | —                   |
+| `slug`          | `text`        | formato `kebab-case` | No   | —                   |
+| `icon_name`     | `text`        | 1–50                 | Sí   | —                   |
+| `display_order` | `integer`     | —                    | No   | `0`                 |
+| `active`        | `boolean`     | —                    | No   | `true`              |
+| `deleted_at`    | `timestamptz` | —                    | Sí   | —                   |
+| `created_at`    | `timestamptz` | —                    | No   | `now()`             |
+| `updated_at`    | `timestamptz` | —                    | No   | `now()`             |
+| `updated_by`    | `uuid`        | —                    | Sí   | —                   |
+
+> La longitud de `name` e `icon_name` la aplican `CHECK` (migración `categories_length_checks`); no se usa `varchar(n)`. `slug` no tiene tope propio: lo acota su formato.
 
 ## Constraints e índices
 
 - `id`: clave primaria.
-- `name`: único entre **todos** los registros, incluidos los dados de baja; `citext` evita diferencias solo por mayúsculas/minúsculas.
+- `name`: único entre **todos** los registros, incluidos los dados de baja; `citext` evita diferencias solo por mayúsculas/minúsculas. Longitud de 2 a 80 caracteres.
 - `slug`: único entre **todos** los registros, incluidos los dados de baja; debe cumplir `CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$')`.
+- `icon_name`: longitud de 1 a 50 caracteres cuando no es nulo.
 - `display_order`: `CHECK (display_order >= 0)`.
 - `updated_by`: clave foránea a `auth.users(id)`.
 
