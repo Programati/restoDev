@@ -260,6 +260,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_current_access_context: { Args: never; Returns: Json }
       has_permission: { Args: { p_code: string }; Returns: boolean }
     }
     Enums: {
