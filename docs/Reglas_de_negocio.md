@@ -1,6 +1,6 @@
 # Reglas de Negocio
 
-> Última actualización: 2026-11-20. Detalle técnico en `docs/Plan_identidad_y_permisos.md` y en `docs/database/model/Model_*.md`.
+> Última actualización: 2026-11-22. Detalle técnico en `docs/Plan_identidad_y_permisos.md` y en `docs/database/model/Model_*.md`.
 
 ## 1. Identidad, roles y permisos
 
@@ -51,6 +51,27 @@ Los permisos de módulos nuevos (productos, pedidos, etc.) se agregan al catálo
 3. No se puede quitar el rol `admin`, inactivar ni borrar al último usuario con `admin.access`.
 4. Un rol asignado a algún usuario no se puede borrar: hay que desasignarlo o desactivarlo.
 5. Todo cambio de usuarios, roles y permisos queda registrado en el historial de auditoría, con su autor.
+
+### Alta y gestión de usuarios
+
+Los usuarios se crean y administran desde el panel, con el permiso `users.manage` (decisiones D14 y D15 de `docs/Plan_identidad_y_permisos.md`).
+
+1. **Alta.** Quien tiene `users.manage` crea la cuenta con **nombre completo, email y contraseña inicial**. El nombre completo es obligatorio (2 a 120 caracteres, sin espacios sobrantes) y lo escribe quien da el alta: no se deduce del email.
+2. El email es único (lo garantiza Auth). Un email repetido se rechaza como conflicto.
+3. La contraseña inicial tiene un mínimo de 8 caracteres _(propuesta, a confirmar)_. La entrega quien da el alta, por fuera del sistema. No se guarda ni se muestra después.
+4. El usuario nace `active`, con la cuenta confirmada y **sin roles**. Sin roles no tiene permisos. Los roles se asignan después, o en el mismo alta; si esa asignación falla, el usuario queda creado sin roles y se informa.
+5. **Datos editables:** `full_name` y `phone`. El email no se modifica desde el panel (pendiente).
+6. **Estado.** Pasar a `inactive` bloquea también la cuenta de Auth; reactivar la desbloquea. Primero se cambia el estado en la base y recién después se bloquea. Aplica la protección del último administrador.
+7. **Contraseña olvidada.** Quien tiene `users.manage` puede definir una contraseña nueva para un usuario _(propuesta, a confirmar)_.
+8. **Pendiente: invitación por email.** El alta por invitación (usuario `pending`, correo y pantalla para completar el alta) no está implementada.
+
+### Gestión de roles
+
+1. Quien tiene `roles.manage` crea y edita roles. Un rol creado desde el panel nunca es del sistema.
+2. `code` en minúsculas (`^[a-z][a-z0-9_.-]{1,49}$`) y `name` únicos sin distinguir mayúsculas.
+3. Solo se borra un rol que no es del sistema y no tiene usuarios asignados; si no, se desactiva.
+4. Los permisos de un rol los define `roles.manage`, sin poder modificar los de un rol que uno mismo tiene asignado.
+5. Un rol inactivo no concede permisos aunque tenga asignaciones.
 
 ## 2. Alta de roles operativos
 

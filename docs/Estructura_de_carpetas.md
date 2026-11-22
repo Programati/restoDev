@@ -17,6 +17,24 @@ restoDev/
 │   │   │   ├── Contract_getCategory.md
 │   │   │   ├── Contract_listCategories.md
 │   │   │   └── Contract_updateCategory.md
+│   │   ├── roles/
+│   │   │   ├── Contract_roles.md
+│   │   │   ├── Contract_createRole.md
+│   │   │   ├── Contract_deleteRole.md
+│   │   │   ├── Contract_getRole.md
+│   │   │   ├── Contract_listRoles.md
+│   │   │   ├── Contract_setRolePermissions.md
+│   │   │   └── Contract_updateRole.md
+│   │   ├── users/
+│   │   │   ├── Contract_users.md
+│   │   │   ├── Contract_assignUserRole.md
+│   │   │   ├── Contract_createUser.md
+│   │   │   ├── Contract_getUser.md
+│   │   │   ├── Contract_listUsers.md
+│   │   │   ├── Contract_removeUserRole.md
+│   │   │   ├── Contract_resetUserPassword.md
+│   │   │   ├── Contract_setUserStatus.md
+│   │   │   └── Contract_updateUser.md
 │   │   ├── Contract_errors.md
 │   │   └── Contract_template.md
 │   ├── database/
@@ -38,6 +56,21 @@ restoDev/
 │   │   │   ├── HU_eliminar_categoria.md
 │   │   │   ├── HU_listar_categoria.md
 │   │   │   └── HU_obtener_categoria.md
+│   │   ├── roles/
+│   │   │   ├── HU_actualizar_rol.md
+│   │   │   ├── HU_crear_rol.md
+│   │   │   ├── HU_definir_permisos_rol.md
+│   │   │   ├── HU_eliminar_rol.md
+│   │   │   ├── HU_listar_roles.md
+│   │   │   └── HU_obtener_rol.md
+│   │   ├── users/
+│   │   │   ├── HU_actualizar_usuario.md
+│   │   │   ├── HU_asignar_roles_usuario.md
+│   │   │   ├── HU_cambiar_estado_usuario.md
+│   │   │   ├── HU_crear_usuario.md
+│   │   │   ├── HU_listar_usuarios.md
+│   │   │   ├── HU_obtener_usuario.md
+│   │   │   └── HU_restablecer_contrasena_usuario.md
 │   │   └── HU_template.md
 │   ├── Contratos_de_actions.md
 │   ├── Convenciones_de_archivos.md

@@ -1,240 +1,94 @@
 # PROGRESO
 
-> Leer este archivo al inicio de cada chat. Reglas y convenciones detalladas en `docs/` y `AGENTS.md`.
+> Leer al inicio de cada chat. Las tecnologías y reglas generales están en `Stack_restoDev.md` y `AGENTS.md`; el detalle técnico está en `docs/`.
 > Última actualización: 2026-11-22
 
-## Proyecto
+## 1. Proyecto
 
-- **Nombre:** resto-app (`restoDev`)
-- **Rama:** `feature/access-hardening` (Fase 5: protecciones, ver `docs/Plan_identidad_y_permisos.md`). `develop` tiene mergeadas las fases anteriores
-- **Cambios locales sin commit ni PR:** Fase 5 completa: 6 migraciones (F5.3 a F5.7) aplicadas al proyecto de pruebas, el cliente de administración de Auth con `setUserBanned` (F5.2) y documentación sincronizada. Falta commitear, correr `pnpm run check:full` y abrir el PR hacia `develop` al cerrar la fase
-- **PRs anteriores:** los PR de setup, Supabase, entorno, autenticación, `createCategory`, `deleteCategory`, la documentación de la Fase 0, la Fase 1 (`profiles`), la Fase 2 (`feature/roles-permissions`) y la Fase 3 (`feature/categories-permissions`) están completados y mergeados en `develop`
-- **Estado actual:** Fases 0 a 5 completas (falta `check:full` y el PR de la Fase 5): hechas y verificadas F5.2 (`setUserBanned`, bloqueo en Auth), F5.3 (`is_system`), F5.4 (anti-escalada), F5.5 (último administrador), F5.6 (`get_current_access_context()`), F5.7 (revisión de `REVOKE`/`GRANT`), F5.8 (matriz a nivel de base de datos, sin fallos) y F5.9 (cierre documental). **Las 7 RPC `admin_*` quedan pendientes documentadas hasta la pantalla de usuarios y roles (D13)**, y con ellas la conexión de `setUserBanned` al cambio de `profiles.status`. Las pruebas de la matriz de la sección 7 y las tablas de verificación de las HU siguen diferidas hasta tener el Front. Detalle en `docs/Plan_identidad_y_permisos.md`
-- **Gestor:** pnpm 12.11.2 · Node 24.22.1
+- **Nombre:** `resto-app` (`restoDev`).
+- **Rama actual:** `feature/access-hardening`.
+- **Estado:** implementación de las fases 0–5 completada; la Fase 5 todavía necesita `check:full`, commit y PR hacia `develop`. La documentación de usuarios y roles (HU y contratos) está redactada, sin código.
+- **Cambios locales:** Fase 5 (F5.2–F5.9), incluidas migraciones, `setUserBanned` y documentación; todavía sin commit ni PR.
+- **Entorno:** Node `24.22.1` · pnpm `12.11.2`.
+- **Stack:** consultar `Stack_restoDev.md`; las versiones exactas de dependencias están en `package.json` y `pnpm-lock.yaml`.
 
-## Stack
+## 2. Hitos completados
 
-| Área                                      | Versión                        |
-| ----------------------------------------- | ------------------------------ |
-| Next.js (App Router, `src/`)              | 16.4.5                         |
-| React                                     | 19.3.0                         |
-| TypeScript (strict)                       | 5.9.3                          |
-| Tailwind (vía `@tailwindcss/turbopack`)   | 4.3.5                          |
-| Zod                                       | 4.6.7                          |
-| ESLint + `eslint-config-next`             | 9.39.5 / 16.4.5                |
-| Prettier + `prettier-plugin-tailwindcss`  | 3.9.10 / 0.8.1                 |
-| Husky                                     | 9.1.7                          |
-| lint-staged                               | 17.6.0                         |
-| Supabase CLI (devDependency)              | versión exacta en package.json |
-| `@supabase/supabase-js` · `@supabase/ssr` | versión exacta en package.json |
+- **Setup (10–16/11):** Next.js, TypeScript, pnpm, Supabase CLI, variables de entorno, clientes Supabase, validación, ESLint, Prettier, Husky, lint-staged y scripts de comprobación. PRs correspondientes integrados en `develop`.
+- **Autenticación y categorías (14–20/11):** login, logout y operaciones `create/get/list/update/deleteCategory`; Route Handler `GET /api/categories`; contratos y documentación. Los PRs indicados en el resumen original están integrados en `develop`.
+- **Fase 0 (21/11):** decisiones de identidad y permisos, modelos, DER y reglas de negocio; PR integrado en `develop`.
+- **Fase 1 (21/11):** `profiles`, migraciones y backfill; PR integrado en `develop`.
+- **Fase 2 (21/11):** `roles`, `permissions`, asignaciones, funciones de autorización y políticas de lectura; PR integrado en `develop`.
+- **Fase 3 (21/11):** autorización por permisos en Actions y páginas, políticas de `categories` y función puente `has_permission`; PR integrado en `develop`.
+- **Fase 4 (21/11):** `audit_logs`, función genérica de auditoría y triggers en tablas de acceso y `categories`; implementación y pruebas documentadas.
+- **Fase 5 (22/11):** protecciones de roles del sistema, anti-escalada, último administrador, contexto de acceso, bloqueo de usuarios en Supabase Auth, revisión de `REVOKE`/`GRANT` y matriz de base de datos (8 actores × 31 pruebas, sin fallos). Documentación sincronizada.
+- **Documentación de usuarios y roles (22/11), solo documentos, sin código:**
+  - Usuarios: 7 HU (`docs/historias_de_usuario/users/`) y 9 contratos (`docs/contracts/users/`: resumen del módulo, `createUser`, `listUsers`, `getUser`, `updateUser`, `setUserStatus`, `assignUserRole`, `removeUserRole`, `resetUserPassword`).
+  - Roles: 6 HU (`docs/historias_de_usuario/roles/`) y 7 contratos (`docs/contracts/roles/`: resumen del módulo, `createRole`, `listRoles`, `getRole`, `updateRole`, `deleteRole`, `setRolePermissions`).
+  - Todas las HU están en estado Borrador y los contratos figuran como "Documentada; sin código".
 
-## Configuración clave
+## 3. Estado actual
 
-- `next.config.ts`: `cacheComponents`, `partialPrefetching`, `experimental.agentFeedback`
-- `pnpm-workspace.yaml`: `minimumReleaseAge: 4320` (3 días), `saveExact: true`, `allowBuilds` con `sharp` y `unrs-resolver` en `false` y `supabase` en `true` (necesita su script de instalación para descargar el binario)
-- `tsconfig.json`: `strict` y `erasableSyntaxOnly` activos (sin `enum`, `namespace` ni parameter properties en constructores: declarar el campo y asignarlo a mano)
-- Alias de imports: `@/*` → `./src/*`
-- Scripts: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `check`, `check:full`, `prepare` (Husky)
-- `.prettierrc`: sin `;`, comillas dobles, `trailingComma: all`, `printWidth: 100`, plugin de Tailwind
-- `.prettierignore`: incluye `src/core/types/database.types.ts` (generado por Supabase) y `pnpm-lock.yaml`
-- `.gitignore`: base de `create-next-app` + `/dist`, `*.log`, `/playwright-report/`, `/test-results/` y la excepción `!.env.example`; `supabase/.temp/` ignorado
-- `lint-staged.config.mjs`: `*.{ts,tsx,js,jsx,mjs}` → `eslint --fix` + `prettier --write`; `*.{json,md,css,yml,yaml}` → `prettier --write`
-- `.husky/pre-commit`: `pnpm exec lint-staged` y luego `pnpm run typecheck` (corre sobre todo el proyecto: un archivo temporal con errores bloquea cualquier commit)
-- Supabase: CLI se usa siempre con `pnpm exec supabase <comando>`; proyecto de pruebas `restoDevNew` (ref `qgbwqpvfvahphvarjvdb`); el CLI lo etiqueta `production` por ser la rama principal del proyecto, pero es el de pruebas
-- Supabase CLI: `db push` apunta por defecto a una base local (necesita Docker); para aplicar migraciones al proyecto de pruebas en la nube usar `pnpm exec supabase db push --remote` (conviene antes `--dry-run`). Cada migración se crea con `pnpm exec supabase migration new <nombre>` (genera el timestamp)
-- **Tipos generados:** `supabase gen types typescript --linked` falla con "Cannot find project ref" (`--linked` está deprecado). Usar `--project-id` y **nunca redirigir directo al archivo**: si el comando falla, el `>` lo deja vacío. Forma segura: `pnpm exec supabase gen types typescript --project-id qgbwqpvfvahphvarjvdb > /tmp/db.types.ts && mv /tmp/db.types.ts src/core/types/database.types.ts`. Si se vació por error: `git checkout -- src/core/types/database.types.ts`
-- **GRANT obligatorio en cada tabla:** las tablas creadas por migración no reciben permisos de lectura ni escritura para `anon`, `authenticated` ni `service_role` (solo `MAINTAIN`, `REFERENCES`, `TRIGGER` y `TRUNCATE`). Sin `GRANT`, RLS no llega a evaluarse y toda consulta falla con `42501` (los Servicios lo reportan como `INTERNAL_ERROR`). Las tablas deben quedar con RLS, políticas y GRANT mínimo (sin `DELETE` en tablas con baja lógica); las nuevas tablas deben incorporar estas protecciones al crearse: `REVOKE ALL` a `public`, `anon`, `authenticated` y `service_role` (esos privilegios por defecto sobran, y `TRUNCATE` se salta RLS) y luego el `GRANT` mínimo. Las funciones nuevas en `public` reciben `EXECUTE` para todos: las de trigger y las `SECURITY DEFINER` necesitan su `REVOKE EXECUTE`. En `categories`, el GRANT se añadió en una migración posterior. Detalle en `docs/database/supabase-cli.md`
-- Variables de entorno: `.env` (no versionado) y `.env.example` (versionado, sin valores). Variables actuales: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_SERVICE_ROLE_KEY` (solo servidor; en Supabase: Settings → API Keys, la secret key `sb_secret_...` o la `service_role` legacy; nunca se pega en chats ni se versiona). Se validan con Zod en `src/lib/env.ts`; las variables se leen por su nombre completo (Next.js solo reemplaza referencias explícitas a `process.env.NOMBRE`). La `SUPABASE_SERVICE_ROLE_KEY` se valida **al pedirla** con `getServiceRoleKey()` y no al cargar el módulo, porque `env.ts` también lo importa el cliente del navegador (si la validara al cargar, la app se rompería en el navegador); si falta, la app arranca y solo falla `createAdminClient()`
-- Clientes Supabase: `src/lib/supabase/client.ts` (navegador), `server.ts` (servidor, con cookies; `createClient()` se ejecuta por petición, nunca como constante global) y `admin.ts` (`createAdminClient()`: clave `service_role`, sin sesión, creado por petición; solo servidor y solo para la API de administración de Auth, D5; se salta RLS, así que no se usa para leer ni escribir tablas)
-- `src/proxy.ts` (Next.js 16 renombró `middleware.ts` a `proxy.ts`): llama a `updateSession` de `src/lib/supabase/middleware.ts`; refresca la sesión. Sin sesión redirige a `/login` en rutas privadas; `/` es pública (comparación **exacta**, no con `startsWith`, o todo quedaría público) y `/login` está en `PUBLIC_PATHS`. Con sesión, `/` y `/login` redirigen a `/admin`. Los redirects conservan las cookies de sesión refrescadas. Excluye `/api` del matcher. Es solo comodidad de navegación: la seguridad real va dentro de cada Action (`auth.getUser()`)
-- Server Actions se tratan como endpoints públicos: cada una verifica sesión y permisos por sí misma, y recibe `input: unknown` que valida con Zod
-- Errores de servicio: `src/lib/errors.ts` (`ServiceError` con `code: ErrorCode`). Los Servicios lanzan `ServiceError`; la Action lo convierte en `ActionResult`
-- `categories`: unicidad de `name` y `slug`, formato de `slug`, límites de longitud y `display_order >= 0` documentados y aplicados con constraints/migraciones. El servicio `createCategory` detecta la colisión de slug con `error.message.includes("slug")`: si se renombran las constraints, ajustarlo
-- `profiles` (Fase 1): tabla 1 a 1 con `auth.users` (`ON DELETE CASCADE`), enum `profile_status` (`pending`, `active`, `inactive`), RLS con lectura del propio perfil y `GRANT select` únicamente. El alta la hace el trigger `on_auth_user_created` → `public.handle_new_auth_user()` (`SECURITY DEFINER`, `EXECUTE` revocado a `public`, `anon` y `authenticated`): crea el perfil `active`, o `pending` si `raw_app_meta_data ->> 'invited' = 'true'`. Migraciones `create_profiles` y `backfill_profiles`
-- **Roles y permisos (Fase 2):** tablas `roles`, `permissions`, `role_permissions` y `user_roles`, todas con RLS, `GRANT select` a `authenticated` y sin escritura desde la API. Seed (migración `seed_roles_permissions`, idempotente): 6 permisos (`categories.read`, `categories.manage`, `users.manage`, `roles.manage`, `audit.read`, `admin.access`) y el rol `admin` (`is_system`) con todos ellos. Esquema `private` con `has_permission(code)`, `has_role(code)` e `is_admin()` (`SECURITY DEFINER`, `STABLE`, `search_path` fijo; exigen perfil `active`, rol activo y la cadena completa); `EXECUTE` solo para `authenticated`. **`private` no está expuesto en la API**, así que `supabase.rpc()` no puede llamar a esas funciones: se resolvió con la función puente `public.has_permission` (D12, Fase 3). Políticas de lectura: `roles` (usuario activo), `permissions` y `role_permissions` (`roles.manage`), `user_roles` (filas propias o `users.manage`) y `profiles` (se suma `users.manage`). El usuario de pruebas `admin@resto.test` tiene el rol `admin` (SQL de D8 en `docs/database/supabase-cli.md`, sección 6.2)
-- **Autorización en la app (Fase 3):** función puente `public.has_permission(p_code)` (`SECURITY INVOKER`, `EXECUTE` solo para `authenticated`) que delega en `private.has_permission` (D12, opción a). Actions: `src/lib/auth/requirePermission.ts` (acepta uno o varios permisos y basta con uno; devuelve `FORBIDDEN` o `INTERNAL_ERROR`; se llama tras comprobar la sesión y antes de Zod). Páginas: `src/lib/auth/requirePagePermission.ts` (sesión con redirect a `/login`, permiso y `connection()`; se usa dentro de `<Suspense>`) y `components/layout/access-denied.tsx`. `categories`: políticas `categories_select_by_permission`, `categories_insert_by_permission` y `categories_update_by_permission`; la provisoria se eliminó y `updated_by` tiene `ON DELETE SET NULL`. Lectura: `categories.read` o `categories.manage` (con `include_deleted`, solo `manage`); escritura: `categories.manage`
-- **Auditoría (Fase 4):** tabla `audit_logs` (solo inserción; RLS con lectura por `audit.read`; `REVOKE ALL` a `public`, `anon`, `authenticated` y `service_role` y `GRANT select` únicamente a `authenticated`, así que nadie puede editar, borrar ni hacer `TRUNCATE`). Función genérica `private.audit_log_change(claves[, excluidas])` (`SECURITY DEFINER`, `search_path` vacío, `AFTER`, `EXECUTE` revocado a todos): `actor_id = auth.uid()` (`NULL` en migraciones, SQL Editor y servidor), `record_id` con las columnas de la clave unidas por `:`. Triggers `audit_<tabla>` en `profiles`, `roles`, `permissions`, `role_permissions`, `user_roles` y `categories`. La baja lógica de `categories` se registra como `update` (es un `UPDATE` de `deleted_at`). Las Actions y los Servicios no escriben en `audit_logs`: lo hace la base. Migraciones `create_audit_logs`, `create_audit_trigger_function`, `audit_triggers_access_tables` y `audit_trigger_categories`; `audit_logs` ya figura en `database.types.ts` y no está en la publicación de Realtime
-- **Protecciones de acceso (Fase 5, F5.3 a F5.5):** triggers `SECURITY DEFINER` (`search_path` vacío, `EXECUTE` revocado a `public`, `anon`, `authenticated` y `service_role`). `roles_protect_system` (`private.protect_system_roles`): no se borra, renombra el `code`, desactiva ni cambia el flag `is_system` de un rol del sistema (`23514`); vale para todos. `user_roles_protect_assignments` y `role_permissions_protect_assignments` (`private.protect_access_assignments`): con `auth.uid()` exigen `users.manage` / `roles.manage` y bloquean la autoasignación directa e indirecta (`42501`); sin `auth.uid()` (migraciones, SQL Editor, servidor) no controlan nada. `user_roles_protect_last_admin` y `profiles_protect_last_admin` (`private.protect_last_admin`): no se quita el rol, inactiva ni borra al último administrador (`23514`). Límite conocido: la guardia no cubre borrar `admin.access` de `role_permissions` ni desactivar un rol no sistema que lo tenga
-- **Contexto de acceso (F5.6):** `public.get_current_access_context()` (`SECURITY DEFINER`, `STABLE`, `search_path` vacío, `EXECUTE` solo para `authenticated`, sin parámetros) devuelve en una llamada `user_id`, `email`, `full_name`, `status`, `roles` y `permissions` del propio usuario (`auth.uid()`); roles y permisos solo cuentan con perfil `active` y roles `is_active`, y sin sesión devuelve `NULL`. Se llama con `supabase.rpc()`; todavía no hay consumidor en el front
-- **Revisión de permisos (F5.7, 2026-11-22):** migraciones `revoke_table_privileges_review` y `revoke_trigger_functions_execute`. Las 7 tablas (`profiles`, `roles`, `permissions`, `role_permissions`, `user_roles`, `audit_logs` y `categories`) quedan solo con `GRANT` a `authenticated` (`select`; en `categories`, `select, insert, update`): `anon` y `service_role` no tienen ningún privilegio y ya no hay `TRUNCATE`, `MAINTAIN`, `TRIGGER` ni `REFERENCES` para nadie fuera de `postgres`. Las 6 funciones de trigger (`private.audit_log_change`, `protect_*`, `public.handle_new_auth_user`, `public.set_updated_at` y `public.rls_auto_enable`) no tienen `EXECUTE` para `public`, `anon`, `authenticated` ni `service_role`. `rls_auto_enable` es un event trigger que no sale de nuestras migraciones. `set_updated_at` comprobado el 2026-11-22: sigue disparando
-- **Bloqueo en Auth (F5.2, D5):** `setUserBanned(adminClient, userId, banned)` en `src/core/services/auth/setUserBanned.service.ts` (exportada desde `services/auth/index.ts`). Usa `auth.admin.updateUserById` con `ban_duration`: `"876000h"` (unos 100 años) para bloquear y `"none"` para limpiar. Un usuario inexistente lanza `NOT_FOUND`; cualquier otra falla, `INTERNAL_ERROR` (con `console.error`). Debe llamarse **después** de que la base aceptó el cambio de `profiles.status`, así la guardia del último administrador rechaza antes de bloquear a alguien. No es una Action: la llamará el Servicio del cambio de estado. Verificada el 2026-11-22 con un Route Handler temporal (no versionado): bloqueo, desbloqueo y `NOT_FOUND`. No hizo falta ningún `GRANT` a `service_role` (usa la API de Auth, no la Data API). **Pendientes:** conectarla al cambio de `status` (llega con `admin_update_profile_status`, D13) y mapear `user_banned` en `login.service` (ver F5.9)
-- Escrituras sobre las tablas de acceso: solo por migración o SQL Editor; las RPC `admin_*` quedan pendientes hasta la pantalla de gestión (D13). Los triggers de F5.3 a F5.5 ya las protegen
-- `createCategory` implementado: `core/schemas/categories/createCategory.schema.ts`, `core/types/categories/category.types.ts`, `core/services/categories/createCategory.service.ts` (slug con sufijo numérico, reintento si otra petición ocupa el slug, traduce `23505` a `CONFLICT` y `42501` a `FORBIDDEN`) y `actions/categories/createCategory.action.ts` (exporta `createCategoryAction`)
-- `deleteCategory` implementado y mergeado en `develop`: `core/schemas/categories/deleteCategory.schema.ts`, `core/services/categories/deleteCategory.service.ts`, `actions/categories/deleteCategory.action.ts` (exporta `deleteCategoryAction`) y contrato `docs/contracts/categories/Contract_deleteCategory.md`. Baja lógica con un único `UPDATE` atómico (`deleted_at is null` y `active = false`); sin migración nueva. Pendiente: regla de productos activos (requiere `products`). La auditoría de la baja quedó resuelta en la Fase 4
-- `logout` implementado: contrato `docs/contracts/auth/Contract_logout.md`, `core/services/auth/logout.service.ts` (+ `index.ts`) y `actions/auth/logout.action.ts` (exporta `logoutAction`, devuelve `ActionResult<null>`; sin schema porque no recibe datos). El botón `features/auth/components/logout-button.tsx` llama a la Action y, si sale bien, hace `router.push("/")` y `router.refresh()`
-- `login` separado del componente: contrato `docs/contracts/auth/Contract_login.md`, resumen `docs/contracts/auth/Contract_auth.md`, `core/schemas/auth/login.schema.ts` (+ `index.ts`), `core/types/auth/auth.types.ts`, `core/services/auth/login.service.ts` (+ exportación en `index.ts`) y `actions/auth/login.action.ts` (exporta `loginAction`). Zod valida email y contraseña; el Servicio traduce credenciales inválidas a `UNAUTHORIZED` y otras fallas a `INTERNAL_ERROR`. El formulario ya llama a la Action y conserva `form.reset()` y la navegación a `/admin` en caso de éxito
-- Convenciones de librerías: en Zod 4 usar `z.flattenError(error).fieldErrors` y `{ error: "..." }` en los mensajes; en React 19 tipar el submit con `SubmitEvent<HTMLFormElement>` (importado de `react`), no `FormEvent` (deprecado)
-- **`cacheComponents` conserva el estado de las páginas ya visitadas** (quedan ocultas, no se desmontan). En formularios, al terminar con éxito hay que apagar `pending` y limpiar los campos (`form.reset()`, guardando antes `const form = event.currentTarget`, porque tras un `await` es `null`); si no, al volver a la pantalla aparece cargada y "cargando". Evitar también `new Date()` en Server Components (puede romper el build con `cacheComponents`)
-- Caché de tipos: si se borra o mueve un `page.tsx`, `pnpm check` puede fallar con `.next/dev/types/validator.ts` referenciando el archivo viejo. Solución: parar `pnpm dev`, borrar `.next` y volver a correr
-- Rutas y layouts (`src/app/`):
-  - `page.tsx` → `/` pública; header con botón **Login** (`components/layout/public-header.tsx`) hacia `/login`
-  - `(auth)/login/page.tsx` → `/login`
-  - `(dashboard)/layout.tsx` → pantallas con sesión; header `components/layout/site-header.tsx` (marca hacia `/admin`, enlace "Crear categoría" y botón "Salir")
-  - `(dashboard)/admin/page.tsx` → `/admin`: exige `admin.access` (con `requirePagePermission`) y saluda con el nombre del perfil
-  - `(dashboard)/categories/new/page.tsx` → formulario de `createCategory`
-  - `api/categories/route.ts` → `GET /api/categories`, usa `listCategoriesAction`
-  - No existen todavía la pantalla `/categories`, ni los Route Handlers `POST /api/categories`, `GET /api/categories/:id` o `PATCH /api/categories/:id`
-  - Solo puede haber un `page.tsx` por ruta: si dos grupos resuelven a la misma ruta, el build falla ("two parallel pages")
-- Estilos: `globals.css` mínimo (Tailwind, fuente del sistema, tablas legibles y números con `tabular-nums`); `layout.tsx` raíz con `lang="es"` y metadata de `restoDev`. La guía `docs/Guia_front.md` todavía no existe; hay `TODO(front)` en `globals.css` y `layout.tsx`
-- Boilerplate de `create-next-app` eliminado (`page.tsx`, estilos, `public/*.svg`); se conserva `src/app/favicon.ico`
-- Login: `src/app/(auth)/login/page.tsx` + `src/features/auth/components/login-form.tsx`. El formulario llama a `loginAction` y ya no ejecuta `signInWithPassword` en el navegador. Tras el éxito apaga `pending`, hace `form.reset()` y `router.replace("/admin")` + `router.refresh()`
-- Formulario `src/app/(dashboard)/categories/new/page.tsx` + `src/features/categories/components/category-form.tsx`: usa `noValidate` para que valide el servidor; campo vacío = no enviado (`icon_name` → `null`, `display_order` → se omite)
+- La rama `feature/access-hardening` contiene los cambios locales de la Fase 5.
+- F5.2: `setUserBanned` usa `createAdminClient()` y la API de administración de Auth. Bloqueo, desbloqueo y `NOT_FOUND` fueron probados el 22/11. La clave `SUPABASE_SERVICE_ROLE_KEY` se valida al solicitarla mediante `getServiceRoleKey()` y se utiliza solo en servidor para Auth Admin.
+- F5.3–F5.5: triggers de protección de roles del sistema, asignaciones y último administrador aplicados y verificados.
+- F5.6: `public.get_current_access_context()` aplicada y verificada; devuelve el contexto de acceso del usuario autenticado.
+- F5.7: privilegios de tablas y ejecución de funciones de trigger revisados; `set_updated_at` comprobado después del `REVOKE`.
+- F5.8–F5.9: matriz de acceso a nivel de base de datos y cierre documental completados. Las pruebas vía Actions siguen diferidas hasta disponer del Front.
+- `pnpm run check:full` pasó el 20/11, antes de los cambios actuales de la Fase 5. Debe volver a ejecutarse antes del PR.
+- **Verificar el PR de la Fase 4:** el resumen inicial no lo incluye entre los PRs mergeados, pero el checklist anterior lo marcaba pendiente. Confirmar su estado real en GitHub antes de cerrar la Fase 5.
+- **Plan desactualizado:** las HU y contratos de usuarios y roles citan las decisiones D14–D16 y las tareas F6.x, pero `docs/Plan_identidad_y_permisos.md` todavía no tiene la Fase 6. F6.1 no está marcada.
 
-## Docs existentes (`docs/`)
+## 4. Funcionalidades implementadas
 
-- Guías raíz: `Stack_restoDev.md`, `Estructura_de_carpetas.md`, `Convenciones_de_archivos.md`, `Contratos_de_actions.md`, `Reglas_de_negocio.md`, `Guia_de_desarrollo_de_funcionalidades.md` y `Git_workflow.md`.
-- Plan en curso: `Plan_identidad_y_permisos.md` (identidad, roles, permisos y auditoría; fases P y F0–F5, decisiones y matriz de pruebas).
-- Contratos: `Contract_template.md`, `Contract_errors.md`, `auth/Contract_auth.md`, `auth/Contract_login.md`, `auth/Contract_logout.md` y `categories/Contract_categories.md` más las fichas `Contract_createCategory.md`, `Contract_getCategory.md`, `Contract_listCategories.md`, `Contract_updateCategory.md` y `Contract_deleteCategory.md`.
-- Base de datos: `database/supabase-cli.md` (instalación, migraciones, tipos, primer admin, configuración del proyecto y cómo probar RLS), `database/model/Model_template.md`, `Model_category.md` y los modelos del plan de identidad, todos ya implementados: `Model_profile.md`, `Model_role.md`, `Model_permission.md`, `Model_role_permission.md`, `Model_user_role.md` y `Model_audit_log.md`. Diseño de referencia: `database/DER_identidad_acceso_auditoria.html`.
-- Historias: `historias_de_usuario/HU_template.md` y HU de crear, obtener, listar, actualizar y eliminar categorías.
+- **Auth:** login y logout implementados mediante Server Actions y Servicios. `src/proxy.ts` refresca la sesión y gestiona redirecciones; cada Action comprueba sesión y permisos por sí misma.
+- **Categorías:** servicios y Actions para crear, obtener, listar, actualizar y eliminar (baja lógica). Existe `GET /api/categories`; todavía no existen la pantalla de listado `/categories` ni los Route Handlers `POST`, `GET /:id` y `PATCH /:id`.
+- **Panel:** `/admin` requiere `admin.access`; existe el formulario `/categories/new`.
+- **Auditoría y acceso:** los detalles de tablas, funciones, políticas, triggers y migraciones están en `docs/Plan_identidad_y_permisos.md` y `docs/database/`.
+- **Usuarios y roles:** solo documentados (HU y contratos); no hay Actions, Servicios, schemas ni RPC `admin_*` implementados.
 
-## Estado
+## 5. Próximos pasos y pendientes
 
-- [x] Next.js instalado y `pnpm-lock.yaml` regenerado bajo la política de supply-chain
-- [x] `typecheck` y `lint` pasan
-- [x] Documentación inicial en `docs/`
-- [x] Zod instalado
-- [x] `.gitignore` alineado con `Git_workflow.md`
-- [x] `tsconfig.json` verificado (`strict`, `erasableSyntaxOnly`, alias `@/*`)
-- [x] Prettier instalado, configurado y aplicado a todo el repo (`format:check` en verde)
-- [x] Husky y lint-staged instalados y configurados
-- [x] Hook `pre-commit` (lint-staged + typecheck) configurado y probado con archivos reales
-- [x] Docs actualizados con los cambios del setup (`Stack_restoDev`, `Git_workflow`, `Estructura_de_carpetas`)
-- [x] Scripts `check` y `check:full` agregados y verificados (`build` en verde)
-- [x] Setup mergeado en `develop` (PR de `chore/project-setup`, squash)
-- [x] Supabase CLI instalada como devDependency y habilitada en `allowBuilds`
-- [x] `supabase/` inicializada y proyecto de pruebas (base nueva) vinculado
-- [x] Usuario de pruebas creado en Supabase Auth
-- [x] `database.types.ts` regenerado desde la base real
-- [x] Guía `docs/database/supabase-cli.md`
-- [x] PR de `chore/supabase-cli-setup` mergeado en `develop`
-- [x] `.env.example` y validación de variables de entorno con Zod (`src/lib/env.ts`)
-- [x] `@supabase/supabase-js` y `@supabase/ssr` instalados; clientes `client.ts` y `server.ts`
-- [x] `proxy.ts` + `lib/supabase/middleware.ts` (refresco de sesión y redirección a `/login`, verificado)
-- [x] `docs/Estructura_de_carpetas.md` actualizado (`middleware.ts` → `proxy.ts`)
-- [x] Contrato `docs/contracts/categories/Contract_createCategory.md` escrito
-- [x] Migración de `categories` aplicada al proyecto de pruebas, con RLS activo y política provisoria; `database.types.ts` regenerado
-- [x] `src/core/types/action-result.ts` (`ActionResult`, `ErrorCode`, `FieldErrors`) y `docs/contracts/Contract_errors.md`
-- [x] Schema, tipos, servicio, `ServiceError` y action de `createCategory`
-- [x] Resumen `docs/contracts/categories/Contract_categories.md` (entidad + tabla de Actions)
-- [x] Nota de política RLS provisoria en `docs/database/model/Model_category.md` y en `Contract_createCategory.md`
-- [x] Página `/login` mínima (temporal), con cookies de sesión verificadas
-- [x] Formulario `/categories/new` para probar `createCategory`
-- [x] Migración `grant_categories_privileges` (causa del `INTERNAL_ERROR`) y documentación del GRANT
-- [x] PR de `chore/env-validation`, login y `createCategory` aceptados y mergeados en `develop`
-- [x] Boilerplate de `create-next-app` eliminado y estilos globales mínimos
-- [x] Layout base (header, navegación, footer)
-- [x] Home pública `/` con botón Login y pantalla `/admin` ("Hola ADMINISTRADOR") con acceso a crear categoría
-- [x] `proxy.ts`: `/` pública (comparación exacta) y redirección a `/admin` con sesión
-- [x] Contrato e implementación de `logout` (servicio, action y botón "Salir")
-- [x] Arreglo del formulario de login (estado conservado por `cacheComponents`)
-- [x] Actions, schemas, tipos y servicios de `getCategory`, `listCategories` y `updateCategory`
-- [x] Route Handler `GET /api/categories` conectado a `listCategoriesAction`
-- [x] Contratos y HU actualizados para las operaciones implementadas de `categories`
-- [x] Pruebas manuales de `createCategory` realizadas por el usuario; reporta que funcionan correctamente
-- [ ] Registrar qué casos individuales se probaron (conflicto, colisión de slug, validaciones, `UNAUTHORIZED`) — diferido hasta tener el Front
-- [x] PRs anteriores de setup, Supabase, entorno, login y `createCategory` completados y mergeados en `develop`
-- [x] `pnpm run check:full` ejecutado y aprobado el 2026-11-20 (`format:check`, `lint`, `typecheck` y `build`)
-- [x] `docs/Estructura_de_carpetas.md` sincronizado con los archivos actuales del proyecto
-- [x] `deleteCategory` implementado y mergeado en `develop` (Action, schema, Servicio y contrato); `format` y `check:full` aprobados
-- [x] Documentación de `deleteCategory` sincronizada: `Estructura_de_carpetas.md`, `PROGRESO.md` y estado de HU-CAT-005 (tarea P.2 del plan)
-- [ ] Completar la tabla de verificación de HU-CAT-005 (F3.8): ya hay permisos reales, faltan los resultados de las pruebas; **diferido hasta tener el Front**; la fila de `deleteCategory` en `Contract_categories.md` ya está revisada
-- [x] Fase 0 del plan de identidad: decisiones D1–D11 confirmadas, 6 modelos, DER corregido, reglas de negocio, convenciones y stack actualizados; PR mergeado en `develop`
-- [x] Fase 1 (`profiles`): migraciones aplicadas, verificación de base completa, `createCategory` comprobado después del cambio y PR mergeado en `develop`
-- [x] Fase 2: migraciones de tablas, funciones de autorización, seed y políticas de lectura aplicadas al proyecto de pruebas; primer admin asignado; verificación de funciones y políticas completa; tipos regenerados; `createCategory` comprobado; `format` y `check:full` aprobados
-- [x] Registro público de Auth ("Allow new users to sign up") desactivado en el proyecto de pruebas el 2026-11-21
-- [x] Fase 2: PR de `feature/roles-permissions` abierto y mergeado en `develop`
-- [x] Fase 3 (F3.1 a F3.7): función puente `has_permission` (D12), políticas de `categories` por permiso, política provisoria eliminada, `updated_by` con `ON DELETE SET NULL`, `requirePermission` en las 5 Actions, `/admin` con `admin.access` y `requirePagePermission`; verificado
-- [x] F3.8 (parte): documentación de la Fase 3 sincronizada (modelo, contratos, HU, estructura y guías)
-- [ ] F3.8: completar las tablas de verificación de las HU de `categories` y la matriz de la sección 7 del plan, con los resultados reales de las pruebas — **diferido hasta tener el Front** (decisión del 2026-11-21); hasta entonces las tablas de las HU quedan en "Pendiente"
-- [x] Fase 3: PR de `feature/categories-permissions` abierto y mergeado en `develop` (con la verificación de F3.8 diferida al Front anotada en el PR)
-- [x] Fase 4 (F4.1 a F4.5): `audit_logs`, función genérica de auditoría y triggers en las 5 tablas de acceso y en `categories`, aplicados al proyecto de pruebas; verificado (3 eventos con el actor correcto, sin romper el `.select()` posterior, escritura y llamada a la función rechazadas con `42501`, `anon` rechazado y sin Realtime)
-- [x] F4.6: documentación de la Fase 4 sincronizada (modelo `Model_audit_log`, `Model_category`, contratos y HU de create, update y delete, estructura, plan y progreso)
-- [ ] Fase 4: `pnpm run check:full` y PR de `feature/audit-logs` hacia `develop`
-- [ ] Casos de auditoría diferidos a F5.8: sin `audit.read` lee 0 filas, `actor_id` `NULL` desde el SQL Editor, borrado de usuario conserva el evento y `TRUNCATE` rechazado
-- [x] F5.3, F5.4 y F5.5: migraciones `roles_is_system_guard`, `access_anti_escalation` y `last_admin_guard` aplicadas al proyecto de pruebas y verificadas
-- [x] F5.2: `SUPABASE_SERVICE_ROLE_KEY` (`getServiceRoleKey()` en `env.ts` y `.env.example`), `createAdminClient()` y `setUserBanned`; verificado el 2026-11-22 (bloqueo con `banned_until` en 2126, desbloqueo y `NOT_FOUND`); `pnpm run check` en verde
-- [ ] Conectar `setUserBanned` al cambio de `profiles.status` (con `admin_update_profile_status`, D13) y probar que un usuario bloqueado no inicia sesión
-- [ ] F5.9: mapear `user_banned` en `login.service` (hoy sale como `INTERNAL_ERROR` con "Error inesperado"; un usuario inactivo debería ver que su cuenta está bloqueada)
-- [x] F5.6: migración `create_get_current_access_context` aplicada y verificada (admin, sin rol, `pending`, `inactive`, sin `sub` y `anon`); las RPC `admin_*` quedan pendientes documentadas (D13)
-- [x] `database.types.ts` regenerado tras F5.6 (`get_current_access_context` en `Functions`)
-- [x] F5.7: migraciones `revoke_table_privileges_review` y `revoke_trigger_functions_execute` aplicadas al proyecto de pruebas y verificadas el 2026-11-22 (solo `authenticated` con `GRANT` mínimo en las 7 tablas; sin `EXECUTE` en las 6 funciones de trigger); documentación sincronizada (plan, estructura y progreso)
-- [x] Comprobado el 2026-11-22 que `set_updated_at` sigue disparando tras el `REVOKE` de F5.7
-- [x] F5.8: matriz de acceso a nivel de base de datos (8 actores × 31 pruebas, 7 tablas, sin fallos) y los 4 casos de auditoría de F4 resueltos; la parte vía Actions sigue diferida al Front
-- [x] F5.9: cierre documental (`supabase-cli.md`, plan y progreso); observaciones de F5.8 solo documentadas
-- [ ] Fase 5: `pnpm run check:full` y PR de `feature/access-hardening` hacia `develop`
-- [ ] Cuando exista la pantalla de usuarios y roles: implementar las 7 RPC `admin_*` y cubrir el límite de la guardia del último administrador
-- [ ] Definir e implementar la protección de la baja frente a productos activos cuando exista la tabla `products`
-- [ ] Crear `docs/Guia_front.md` si se mantiene como entregable; el archivo todavía no existe
+### Inmediatos
 
-## Próximos pasos
+1. Ejecutar `pnpm run check:full` en `feature/access-hardening`.
+2. Revisar `git status` y el diff; confirmar qué cambios deben incluirse en el commit.
+3. Verificar el estado del PR de la Fase 4 en GitHub, por la inconsistencia indicada arriba.
+4. Commitear los cambios de la Fase 5 y abrir el PR hacia `develop` una vez superadas las comprobaciones.
+5. Añadir la Fase 6 al plan (D14–D16 y tareas F6.1–F6.5, que las HU y contratos ya referencian) y marcar F6.1.
 
-1. Cerrar la Fase 5: `pnpm run check:full` y PR de `feature/access-hardening` hacia `develop`.
-2. Diseñar la migración de `products` y el mecanismo en base de datos que impida dar de baja categorías con productos activos; incluir RLS, políticas y GRANT. No dar por resuelta esa regla mientras `products` no exista.
-3. Completar la interfaz de listado/detalle/edición de categorías cuando se defina su alcance.
-4. Crear `docs/Guia_front.md` y evaluar las herramientas de Front cuando se retome ese trabajo.
-5. Con el Front disponible: ejecutar la matriz de la sección 7 del plan sobre `categories` y completar las tablas de verificación de las 5 HU (cierra F3.8). Se repite sobre todas las tablas en F5.8.
+### Diferidos / dependientes del Front
 
-## Decisiones abiertas
+- Implementar las 7 RPC `admin_*` cuando se construya la pantalla de usuarios y roles (D13).
+- Implementar Actions, Servicios y schemas de usuarios y roles según los contratos redactados.
+- Conectar `setUserBanned` al cambio de `profiles.status` mediante `admin_update_profile_status` y mapear `user_banned` en `login.service` para mostrar correctamente el bloqueo al iniciar sesión.
+- Ejecutar la matriz de permisos vía Actions y completar las tablas de verificación de las 5 HU de `categories` cuando exista el Front.
+- Completar el listado, detalle y edición de categorías cuando se defina su alcance.
+- Crear `docs/Guia_front.md` si continúa siendo un entregable.
 
-- ESLint 9.39.5 aparece como deprecado (existe 10.14.0). Evaluar migrar cuando `eslint-config-next` lo soporte
-- Modelo de auth y roles: decidido en la Fase 0 (ver `docs/Plan_identidad_y_permisos.md`, sección 5) y documentado en los `Model_*`; `profiles`, `roles`, `permissions`, `role_permissions` y `user_roles` ya están implementadas (Fases 1 y 2), `categories` ya usa permisos (Fase 3) y la auditoría está implementada (Fase 4, PR pendiente); la Fase 5 (protecciones) está completa, a falta de `check:full` y del PR
-- Permisos (GRANT): regla vigente = GRANT explícito por tabla, mínimo necesario, sin `DELETE` en tablas con baja lógica y sin permisos para `anon`. Cada tabla nueva hace `REVOKE ALL` a `public`, `anon`, `authenticated` y `service_role` antes del `GRANT` (revisado en F5.7). `service_role` no tiene permisos sobre tablas y no hacen falta: se usa solo para la API de administración de Auth (decisión D5, F5.2), que no pasa por la Data API
-- La regla "no dar de baja una categoría con productos activos" debe validarse en la base (no solo en la UI). `products` todavía no existe, así que hay que diseñar la protección junto con su modelo y migración
-- `deleteCategory`: la regla de inactividad (solo se da de baja una categoría con `active = false`) hoy la aplica el Servicio; evaluar un `CHECK (deleted_at is null or active = false)` en la base. Faltan además confirmar los criterios 8 y 10 de HU-CAT-005 y decidir si hace falta una HU de restauración
-- Auditoría (D9): sin purga por ahora; revisar la retención y la exclusión de columnas sensibles antes de auditar tablas con más movimiento (por ejemplo `orders`). Si se agrega purga, requiere una excepción explícita al `REVOKE DELETE`
-- Registro público de Auth (D7): desactivado en el proyecto de pruebas el 2026-11-21. Revisarlo en cada entorno nuevo, producción incluido (`docs/database/supabase-cli.md`, sección 8). Los usuarios se crean desde el panel o la API de administración y nacen `active` y sin roles, así que no tienen acceso a `categories` ni al panel `/admin` hasta que se les asigne un rol
-- La `SUPABASE_SERVICE_ROLE_KEY` hay que cargarla en cada entorno nuevo (local, Vercel); es una credencial con poder total sobre Auth, nunca va en el repo ni en chats
-- Las tablas de acceso ya tienen trigger de `is_system`, protección anti-escalada y guardia del último administrador (F5.3 a F5.5). Pendientes: las RPC `admin_*` (D13) y el límite de la guardia (no cubre borrar `admin.access` de `role_permissions` ni desactivar un rol no sistema que lo tenga)
-- Observaciones de F5.8 (solo documentadas, 2026-11-22): un perfil `inactive` o `pending` sigue leyendo su propia fila de `user_roles`, y cualquier usuario activo, aun sin rol, lee todas las filas de `roles` (incluidas las inactivas). No exponen datos ajenos; se revisan si se endurecen las políticas. También queda pendiente mapear `user_banned` en `login.service` al conectar el bloqueo con el cambio de `status`
-- `profiles` y tablas de acceso: sin probar todavía el alta `pending` por invitación, los `CHECK` de longitud y formato, los duplicados y las cascadas/`RESTRICT`
-- El modelo y el contrato de `categories` documentan límites de `name` (2–80) e `icon_name` (1–50), aplicados también mediante constraints; mantenerlos alineados si cambian
-- Nombre de las Actions: el código exporta `createCategoryAction`, `deleteCategoryAction` y `logoutAction`, pero las fichas y los diagramas dicen `createCategory(input)` y `logout`. Alinear las fichas (o los nombres) para que no queden desfasados
-- El login ya usa el flujo "Server Actions → Servicios"; las otras funcionalidades de `auth` siguen pendientes
-- La navegación del header solo tiene "Crear categoría" y "Salir"; se amplía a medida que existan pantallas (lo define Front)
-- Verificación diferida (2026-11-21): la matriz de acceso de la sección 7 del plan y las tablas de verificación de las 5 HU de `categories` se ejecutan cuando exista el Front (F3.8); no se dan por verificadas hasta entonces. Los cuatro casos de auditoría pendientes se ejecutan en F5.8
+### Dependientes de funcionalidades futuras
 
-## Registro de cambios
+- Diseñar `products` y proteger en la base de datos la baja de categorías que tengan productos activos.
+- Al implementar usuarios y roles, cubrir el límite actual de la protección del último administrador: no contempla retirar `admin.access` de `role_permissions` ni desactivar un rol no sistema que tenga ese permiso. `admin_set_role_permissions` debe comprobarlo (ver `Contract_setRolePermissions.md`).
 
-| Fecha      | Cambio                                                                                                                                                                                                                                                                                                              |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-10 | Archivo creado                                                                                                                                                                                                                                                                                                      |
-| 2026-11-10 | Setup de calidad: Prettier, Husky, lint-staged; `.gitignore` ajustado                                                                                                                                                                                                                                               |
-| 2026-11-10 | Setup commiteado en `chore/project-setup`; PR abierto hacia `develop`                                                                                                                                                                                                                                               |
-| 2026-11-10 | Scripts `check` y `check:full`; docs actualizados con el setup de calidad                                                                                                                                                                                                                                           |
-| 2026-11-12 | PR de `chore/project-setup` aprobado y mergeado en `develop`                                                                                                                                                                                                                                                        |
-| 2026-11-12 | Supabase CLI instalada, proyecto vinculado, usuario de pruebas creado y tipos regenerados                                                                                                                                                                                                                           |
-| 2026-11-12 | Guía `docs/database/supabase-cli.md`; PR de `chore/supabase-cli-setup` aprobado y mergeado en `develop`                                                                                                                                                                                                             |
-| 2026-11-13 | Contrato `createCategory` escrito                                                                                                                                                                                                                                                                                   |
-| 2026-11-14 | `.env.example` y validación de variables con Zod; clientes Supabase y `proxy.ts` (rama `chore/env-validation`)                                                                                                                                                                                                      |
-| 2026-11-14 | Migración de `categories` con RLS provisoria aplicada con `db push --remote`; tipos regenerados                                                                                                                                                                                                                     |
-| 2026-11-14 | `ActionResult`, `ErrorCode` y catálogo `docs/contracts/Contract_errors.md`                                                                                                                                                                                                                                          |
-| 2026-11-14 | Schema, tipos, servicio, `ServiceError` y action de `createCategory`; resumen del módulo y nota de RLS                                                                                                                                                                                                              |
-| 2026-11-14 | Página `/login` mínima (temporal) y formulario `/categories/new`                                                                                                                                                                                                                                                    |
-| 2026-11-14 | `INTERNAL_ERROR` al crear categorías: faltaba GRANT. Migración `grant_categories_privileges` y regla documentada                                                                                                                                                                                                    |
-| 2026-11-16 | PR de `chore/env-validation`, login y `createCategory` aceptados y mergeados en `develop`                                                                                                                                                                                                                           |
-| 2026-11-16 | Boilerplate eliminado, estilos globales mínimos y layout base; la guía Front quedó pendiente                                                                                                                                                                                                                        |
-| 2026-11-16 | Home pública `/`, pantalla `/admin` y `proxy.ts` actualizado (`/` pública, redirección a `/admin` con sesión)                                                                                                                                                                                                       |
-| 2026-11-16 | Logout: contrato, servicio, action y botón "Salir"                                                                                                                                                                                                                                                                  |
-| 2026-11-16 | Login: se limpia el formulario y `pending` tras el éxito (estado conservado por `cacheComponents`)                                                                                                                                                                                                                  |
-| 2026-11-16 | Estado actualizado: rama actual, pruebas manuales reportadas y documentación pendiente verificada                                                                                                                                                                                                                   |
-| 2026-11-17 | Login separado: contrato `docs/contracts/auth/Contract_login.md`, schema Zod, tipos, servicio y Server Action                                                                                                                                                                                                       |
-| 2026-11-17 | Resumen de contratos `docs/contracts/auth/Contract_auth.md` agregado y documentación obsoleta del login temporal corregida                                                                                                                                                                                          |
-| 2026-11-17 | `pnpm check:full` aprobado para el login separado; cambios integrados en `develop` mediante PR                                                                                                                                                                                                                      |
-| 2026-11-20 | PRs anteriores confirmados como completados; estado sincronizado con `get/list/updateCategory` y `GET /api/categories`; `deleteCategory` sigue pendiente                                                                                                                                                            |
-| 2026-11-20 | Referencias de documentación con prefijos `HU_`, `Contract_` y `Model_` sincronizadas                                                                                                                                                                                                                               |
-| 2026-11-20 | `deleteCategory` mergeada en `develop`; Fase 0 del plan de identidad y permisos completa a falta del PR (`docs/Plan_identidad_y_permisos.md`)                                                                                                                                                                       |
-| 2026-11-21 | P.2: documentación de `deleteCategory` sincronizada (`Estructura_de_carpetas.md`, `PROGRESO.md`, estado de HU-CAT-005); `format` y `check:full` aprobados                                                                                                                                                           |
-| 2026-11-21 | Fase 0 mergeada en `develop`                                                                                                                                                                                                                                                                                        |
-| 2026-11-21 | Fase 1: migraciones `create_profiles` y `backfill_profiles` aplicadas al proyecto de pruebas, tipos regenerados y verificación de base completa; mergeada                                                                                                                                                           |
-| 2026-11-21 | Fase 2: tablas de roles y permisos, funciones `private`, seed y políticas de lectura aplicadas y verificadas; primer admin asignado; `supabase-cli.md` actualizada; D12 abierta                                                                                                                                     |
-| 2026-11-21 | Registro público de Auth desactivado en el proyecto de pruebas                                                                                                                                                                                                                                                      |
-| 2026-11-21 | Fase 3 (F3.1 a F3.7): función puente `has_permission`, políticas de `categories` por permiso, política provisoria eliminada, `updated_by` con `ON DELETE SET NULL`, permisos en las Actions, `/admin` y `requirePagePermission`; F3.8 con la documentación sincronizada y las tablas de verificación pendientes     |
-| 2026-11-21 | F3.8: las pruebas de la matriz (sección 7 del plan) y las tablas de verificación de las 5 HU se difieren hasta tener el Front; HU y plan actualizados con el aviso; la fase queda lista para abrir su PR                                                                                                            |
-| 2026-11-21 | PRs de la Fase 2 (`feature/roles-permissions`) y de la Fase 3 (`feature/categories-permissions`) abiertos y mergeados en `develop`; se inicia la Fase 4 (auditoría)                                                                                                                                                 |
-| 2026-11-21 | Fase 4 (F4.1 a F4.6): `audit_logs`, función genérica `private.audit_log_change` y triggers en las 5 tablas de acceso y en `categories` aplicados y verificados en el proyecto de pruebas; documentación sincronizada; cuatro casos de auditoría diferidos a F5.8; PR pendiente                                      |
-| 2026-11-21 | Fase 5: F5.3 (`roles_is_system_guard`), F5.4 (`access_anti_escalation`) y F5.5 (`last_admin_guard`) aplicadas y verificadas. F5.6 reducida a `get_current_access_context()`; las 7 RPC `admin_*` pasan a pendientes documentadas (D13)                                                                              |
-| 2026-11-21 | Fase 5: F5.6 hecha y verificada (`get_current_access_context()`, migración `create_get_current_access_context`). Las RPC `admin_*` siguen pendientes documentadas (D13)                                                                                                                                             |
-| 2026-11-22 | Fase 5: F5.2 hecha y verificada: `SUPABASE_SERVICE_ROLE_KEY` con `getServiceRoleKey()` (validación al pedirla, desvío de D5), `createAdminClient()` y `setUserBanned` (bloqueo, desbloqueo y `NOT_FOUND` probados). Pendientes: conectar al cambio de `status` y mapear `user_banned` en el login (F5.9)            |
-| 2026-11-22 | Fase 5: F5.7 hecha y verificada: migraciones `revoke_table_privileges_review` y `revoke_trigger_functions_execute`. Las 7 tablas quedan solo con `GRANT` mínimo a `authenticated` y las 6 funciones de trigger sin `EXECUTE`. Pendiente comprobar que `set_updated_at` sigue disparando                             |
-| 2026-11-22 | Fase 5 completa: F5.8 (matriz a nivel de base de datos, sin fallos) y F5.9 (cierre documental) hechas; `set_updated_at` comprobado. Pendientes documentados: RPC `admin_*` (D13), límite de la guardia de F5.5, `user_banned` en `login.service` y la matriz vía Actions (con el Front). Falta `check:full` y el PR |
+## 6. Decisiones y revisiones abiertas
+
+- Evaluar ESLint 10 cuando `eslint-config-next` lo soporte.
+- Evaluar un `CHECK` en la base para garantizar `deleted_at IS NULL OR active = false`; confirmar también los criterios 8 y 10 de HU-CAT-005 y si se necesita una HU de restauración.
+- Antes de auditar tablas de mayor movimiento (por ejemplo, `orders`), revisar retención y exclusión de columnas sensibles. No hay política de purga definida.
+- Completar pruebas aún no realizadas sobre invitaciones `pending`, CHECK de formato/longitud, duplicados y reglas `CASCADE`/`RESTRICT` en perfiles y tablas de acceso.
+- Alinear los nombres de Actions en contratos y diagramas con los exports reales (`createCategoryAction`, `deleteCategoryAction`, `logoutAction`).
+- Revisar observaciones de F5.8 si se decide endurecer políticas: perfiles `pending`/`inactive` pueden leer su propia fila de `user_roles`; usuarios activos sin rol pueden leer todas las filas de `roles`, incluidas las inactivas. No se identificó exposición de datos ajenos.
+- Verificar en cada entorno nuevo que el registro público de Supabase Auth esté desactivado; está desactivado en el proyecto de pruebas.
+- Decisiones abiertas de las HU de roles: borrado físico de roles (HU-ROL-005), si se pueden modificar los permisos del rol de sistema `admin` y si hace falta una Action `listPermissions` para el selector (HU-ROL-006).
+
+## 7. Documentación de referencia
+
+- `Stack_restoDev.md`: tecnologías, versiones/criterios y reglas del stack.
+- `AGENTS.md`: instrucciones y convenciones para trabajar en el repositorio.
+- `docs/Plan_identidad_y_permisos.md`: fases, decisiones D1–D13, identidad, autorización, auditoría y matriz de pruebas.
+- `docs/database/supabase-cli.md`: CLI, migraciones, tipos, permisos, Auth y operaciones con Supabase.
+- `docs/database/model/`: modelos de datos y relaciones.
+- `docs/contracts/`: contratos de Actions, errores y funcionalidades (`auth/`, `categories/`, `users/`, `roles/`).
+- `docs/historias_de_usuario/`: historias y criterios de aceptación (`categories/`, `users/`, `roles/`).
+- `docs/Estructura_de_carpetas.md`, `docs/Convenciones_de_archivos.md`, `docs/Reglas_de_negocio.md` y `docs/Guia_de_desarrollo_de_funcionalidades.md`: estructura y convenciones del proyecto.

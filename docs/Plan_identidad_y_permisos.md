@@ -13,15 +13,16 @@
 
 ## 1. Estado general
 
-| Fase | Contenido                                           | Rama sugerida                    | Depende de | Estado                                                                                                                                  |
-| ---- | --------------------------------------------------- | -------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| P    | Cerrar `deleteCategory` y sincronizar documentación | `feature/daleteCategory`         | —          | Completada (verificación de HU-CAT-005 diferida a F3.8, y esta al Front)                                                                |
-| F0   | Decisiones y modelos documentados (sin código)      | `docs/identity-access-design`    | P          | Completada (PR mergeado)                                                                                                                |
-| F1   | Base de identidad: `profiles`                       | `feature/identity-profiles`      | F0         | Completada (PR mergeado)                                                                                                                |
-| F2   | Roles, permisos y funciones de autorización         | `feature/roles-permissions`      | F1         | Completada (PR mergeado)                                                                                                                |
-| F3   | Migrar `categories` a permisos                      | `feature/categories-permissions` | F2         | Completada (PR mergeado); F3.8: documentación hecha, pruebas diferidas al Front                                                         |
-| F4   | Auditoría (`audit_logs` + triggers)                 | `feature/audit-logs`             | F3         | Completada (migraciones aplicadas al proyecto de pruebas y documentación sincronizada; PR pendiente); casos restantes resueltos en F5.8 |
-| F5   | Protecciones, RPC administrativas y cierre          | `feature/access-hardening`       | F4         | Completada (F5.6 reducida a `get_current_access_context()`, ver D13; PR pendiente)                                                      |
+| Fase | Contenido                                              | Rama sugerida                                                                  | Depende de | Estado                                                                                                                                  |
+| ---- | ------------------------------------------------------ | ------------------------------------------------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| P    | Cerrar `deleteCategory` y sincronizar documentación    | `feature/daleteCategory`                                                       | —          | Completada (verificación de HU-CAT-005 diferida a F3.8, y esta al Front)                                                                |
+| F0   | Decisiones y modelos documentados (sin código)         | `docs/identity-access-design`                                                  | P          | Completada (PR mergeado)                                                                                                                |
+| F1   | Base de identidad: `profiles`                          | `feature/identity-profiles`                                                    | F0         | Completada (PR mergeado)                                                                                                                |
+| F2   | Roles, permisos y funciones de autorización            | `feature/roles-permissions`                                                    | F1         | Completada (PR mergeado)                                                                                                                |
+| F3   | Migrar `categories` a permisos                         | `feature/categories-permissions`                                               | F2         | Completada (PR mergeado); F3.8: documentación hecha, pruebas diferidas al Front                                                         |
+| F4   | Auditoría (`audit_logs` + triggers)                    | `feature/audit-logs`                                                           | F3         | Completada (migraciones aplicadas al proyecto de pruebas y documentación sincronizada; PR pendiente); casos restantes resueltos en F5.8 |
+| F5   | Protecciones, RPC administrativas y cierre             | `feature/access-hardening`                                                     | F4         | Completada (F5.6 reducida a `get_current_access_context()`, ver D13; PR pendiente)                                                      |
+| F6   | Usuarios y roles: RPC administrativas, Actions y Front | `docs/users-roles-design`, `feature/admin-rpc`, `feature/admin-users-roles-ui` | F5         | En curso (F6.1 documentación hecha; sigue F6.2)                                                                                         |
 
 Una fase = una rama = un PR hacia `develop` (squash), con `pnpm run check:full` en verde. Las migraciones viajan en el mismo PR que el código que las usa y los tipos se regeneran en ese PR (`Git_workflow.md`, sección 8).
 
@@ -34,14 +35,15 @@ Una fase = una rama = un PR hacia `develop` (squash), con `pnpm run check:full` 
 - Migrar `categories` (política, FK, Actions, documentación) para que use permisos reales.
 - Auditoría de las tablas de seguridad y de `categories`.
 - Protecciones contra escalada de privilegios y contra quedarse sin administrador.
+- Gestión de usuarios y roles (Fase 6): RPC administrativas, Actions y pantallas del panel `/admin`.
 
 **Fuera (fases futuras, no bloquean este plan):**
 
-- Pantallas de gestión de usuarios y roles; flujo de invitación completo (UI y Actions).
+- Flujo de invitación por email (alta `pending`, SMTP y pantalla para completar el alta): pendiente documentado (D14).
 - Módulo `products` y su protección de baja de categorías (usará estos permisos cuando exista).
 - Roles operativos (cajero, mesero, delivery) con permisos de módulos que todavía no existen. Se agregan al catálogo junto con cada módulo.
 - Menú público para `anon` (hoy `anon` no tiene ningún permiso y se mantiene así).
-- RPC de escritura `admin_*` (`admin_create_role`, `admin_update_role`, `admin_delete_role`, `admin_set_role_permissions`, `admin_assign_role`, `admin_remove_role`, `admin_update_profile_status`): pendientes documentadas hasta que exista la pantalla de usuarios y roles (D13). `admin_update_profile_status` es además donde se conecta `setUserBanned` (F5.2) con el cambio de `profiles.status`.
+- RPC de escritura `admin_*` (`admin_create_role`, `admin_update_role`, `admin_delete_role`, `admin_set_role_permissions`, `admin_assign_role`, `admin_remove_role`, `admin_update_profile_status`): se implementan en la Fase 6 (D13, D16). `admin_update_profile_status` es además donde se conecta `setUserBanned` (F5.2) con el cambio de `profiles.status`.
 
 ## 3. Reglas transversales (valen en todas las fases)
 
@@ -94,6 +96,10 @@ D1 a D11 se confirmaron el 2026-11-20 (Fase 0). Los 6 `Model_*.md`, el DER, `Reg
 - [x] **D12. Cómo consulta permisos el helper de D11 (resuelta en F3.1b).** Detectada en F2: `private` no está expuesto en la API, así que `supabase.rpc("has_permission")` no llega a `private.has_permission`. Opciones: (a) función puente `public.has_permission(p_code text)` que delega en la de `private`, con `REVOKE EXECUTE` a `public` y `anon` y `GRANT` a `authenticated`; (b) adelantar `get_current_access_context()` de F5.6 (usuario, roles y permisos en una llamada) y que el helper lea de ahí. La (a) es la más chica y alcanza para F3; la (b) evita una llamada por permiso y sirve también para la interfaz. **Resuelta con la opción (a):** `public.has_permission(p_code text)` (`SECURITY INVOKER`, `search_path` vacío, `EXECUTE` revocado a `public` y `anon` y concedido a `authenticated`), que delega en `private.has_permission`; `requirePermission` la llama con `supabase.rpc()`. `get_current_access_context()` sigue prevista en F5.6.
 
 - [x] **D13. Alcance de F5.6 (2026-11-21).** F5.6 se reduce a `get_current_access_context()`. Las 7 RPC `admin_*` (`admin_create_role`, `admin_update_role`, `admin_delete_role`, `admin_set_role_permissions`, `admin_assign_role`, `admin_remove_role`, `admin_update_profile_status`) quedan **pendientes documentadas** hasta que exista la pantalla de usuarios y roles: sin consumidor solo se podrían probar por SQL. Mientras tanto las escrituras sobre las tablas de acceso siguen siendo por migración o SQL Editor, y los triggers de F5.3 a F5.5 las protegen igual. Al implementarlas: `SECURITY DEFINER`, `search_path` vacío, `REVOKE` a `public` y `anon`, y (propuesta) traducir `42501` a `FORBIDDEN` y `23514` a `CONFLICT` en los Servicios.
+
+- [x] **D14. Alta de usuarios (2026-11-22).** El administrador (`users.manage`) crea la cuenta con **email, contraseña inicial y nombre completo** mediante la API de administración de Auth (`createAdminClient()` y `auth.admin.createUser` con `email_confirm: true`). El usuario nace `active` y sin roles. El `full_name` lo escribe quien crea el usuario: es obligatorio (2–120 caracteres tras recortar) en el formulario y en el schema Zod de la Action, y viaja en `user_metadata.full_name`; el trigger `handle_new_auth_user` solo lo copia a `profiles` (su respaldo, la parte local del email o `Usuario`, queda para cuentas creadas desde el panel de Supabase). **Invitación por email (opción B): pendiente documentado.** Requiere SMTP en Supabase, el estado `pending` y una pantalla para completar el alta (contraseña y datos); no entra en la Fase 6.
+- [x] **D15. Orden y fallos del alta (2026-11-22).** `createUserAction`: sesión → `users.manage` → Zod → `createUser` en Auth → asignación de roles, si se enviaron, con `admin_assign_role` desde la sesión del actor (la anti-escalada necesita `auth.uid()`). Si la asignación falla, el usuario queda creado sin roles y la Action lo informa: sin roles no tiene permisos, así que no es un riesgo; no se borra la cuenta de Auth. Email repetido → `CONFLICT`. La contraseña no se guarda, no se devuelve ni se registra.
+- [ ] **D16. RPC adicionales (propuesta, a confirmar).** `email` y el bloqueo viven en `auth.users`, y `profiles` no tiene `UPDATE` directo. Además de las 7 RPC de D13 hacen falta `admin_list_users` y `admin_get_user` (perfil, email, roles y si está bloqueado) y `admin_update_profile` (`full_name` y `phone`), las tres con `users.manage`. Total en la Fase 6: 10 RPC, con el mismo patrón de D13 (`SECURITY DEFINER`, `search_path` vacío, `REVOKE` a `public` y `anon`, `GRANT` a `authenticated`).
 
 ### Tareas de la Fase 0
 
@@ -230,6 +236,22 @@ Migraciones: `create_audit_logs` (F4.2), `create_audit_trigger_function` (F4.3),
 - **Impacto en `categories`:** ninguno directo. F5.7 le quitó a `authenticated` los privilegios sobrantes (`TRUNCATE`, `MAINTAIN`, `TRIGGER`, `REFERENCES`); conserva `select, insert, update`. F5.8 verificó la matriz de `categories` a nivel de base de datos; la parte vía Actions queda para el Front.
 - **Cierre del plan:** todas las fases en "Completada" y la matriz verificada.
 
+### Fase 6. Usuarios y roles (RPC, Actions y Front)
+
+Objetivo: poder crear usuarios, asignarles roles y comprobar con usuarios reales quién accede a cada pantalla (en especial `categories`). Una rama por bloque, cada una con su PR hacia `develop`.
+
+- [x] F6.1 **Documentación** (rama `docs/users-roles-design`): D14 a D16, reglas de negocio (`Reglas_de_negocio.md`), HU, contratos, `Estructura_de_carpetas.md` y `PROGRESO.md`. **Hecho el 2026-11-22:** 7 HU de usuarios, 6 HU de roles, 9 contratos de usuarios y 7 de roles (con su `Contract_users.md` y `Contract_roles.md`), `Estructura_de_carpetas.md` y `PROGRESO.md` sincronizados. Todas las HU en Borrador y los contratos "Documentada; sin código". D16 sigue como propuesta a confirmar; las decisiones abiertas de las HU de roles (borrado físico, permisos del rol `admin`, Action `listPermissions`) se resuelven en F6.2 o F6.3. `Reglas_de_negocio.md`: revisar que cubra usuarios y roles de la Fase 6.
+  - HU de usuarios (`historias_de_usuario/users/`): HU-USR-001 crear, 002 listar, 003 obtener, 004 actualizar datos, 005 cambiar estado, 006 asignar y quitar roles y 007 restablecer contraseña (propuesta).
+  - HU de roles (`historias_de_usuario/roles/`): HU-ROL-001 crear, 002 listar, 003 obtener, 004 actualizar, 005 eliminar y 006 definir permisos (incluye leer el catálogo).
+  - Contratos en `contracts/users/` y `contracts/roles/`, con su `Contract_users.md` y `Contract_roles.md`.
+- [ ] F6.2 **Base de datos** (rama `feature/admin-rpc`): las 10 RPC de D13 y D16; cubrir el límite de la guardia de F5.5 (validarlo dentro de las RPC de roles o ampliar el trigger); regenerar tipos; actualizar los `Model_*` y probar cada RPC con el patrón `do $$` de `supabase-cli.md`.
+- [ ] F6.3 **Servicios y Actions** (en la misma rama o en `feature/admin-users-roles-api`): Actions de usuarios (`createUserAction`, `listUsersAction`, `getUserAction`, `updateUserAction`, `setUserStatusAction`, `assignUserRoleAction`, `removeUserRoleAction`, `resetUserPasswordAction`) y de roles (`createRoleAction`, `listRolesAction`, `getRoleAction`, `updateRoleAction`, `deleteRoleAction`, `setRolePermissionsAction`), todas con `requirePermission`. Conectar `setUserBanned` al cambio de `status` (después de que la RPC aceptó el cambio) y mapear `user_banned` en `login.service` (y `Contract_login.md`).
+- [ ] F6.4 **Front** (rama `feature/admin-users-roles-ui`): `docs/Guia_front.md` mínima (variables de `globals.css`, formularios, tablas y mensajes); menú del panel según `get_current_access_context()`; `/admin/users` (listar, crear, editar, cambiar estado y asignar roles) y `/admin/roles` (crear, editar, permisos y eliminar). El `full_name` es obligatorio en el formulario de alta.
+- [ ] F6.5 **Pruebas:** la matriz de la sección 7 vía Actions y Front con usuarios reales (sin rol, `categories.read`, `categories.manage`, inactivo y admin), y quién accede al front de `categories`. Completa F3.8 y las tablas de verificación de las HU.
+- [ ] F6.6 **Cierre documental** de la fase.
+- **Pendiente documentado (fuera de la fase):** invitación por email (opción B de D14).
+- **Impacto en `categories`:** ninguno directo; la fase permite probar sus permisos con usuarios reales.
+
 ## 7. Matriz de verificación de acceso
 
 Se ejecuta en F2 (funciones), F3 (categories) y F5 (todas las tablas). Se anota el resultado en la tabla de verificación de cada HU y en el PR.
@@ -288,3 +310,5 @@ Además, para cada tabla expuesta: intentar escribir **sin pasar por la Action**
 | 2026-11-22 | F5.7 hecha y verificada: migraciones `revoke_table_privileges_review` y `revoke_trigger_functions_execute` aplicadas. Las 7 tablas quedan solo con los `GRANT` mínimos de `authenticated` y las 6 funciones de trigger sin `EXECUTE`. Agregada T14                                                                                        |
 | 2026-11-22 | F5.7: comprobado que `set_updated_at` sigue disparando tras el `REVOKE`. F5.8 hecha a nivel de base de datos: matriz de 8 actores × 31 pruebas sobre las 7 tablas sin fallos y los 4 casos de auditoría de F4 resueltos; la parte vía Actions sigue diferida al Front. Agregada T15 y tres observaciones para F5.9                        |
 | 2026-11-22 | F5 completada: F5.6 marcada como hecha y F5.9 (cierre documental) hecha: `supabase-cli.md` corregido y observaciones (a) y (b) de F5.8 solo documentadas. Quedan pendientes documentados: RPC `admin_*` (D13), límite de la guardia de F5.5, `user_banned` en `login.service` y la matriz vía Actions (F3.8). Faltan `check:full` y el PR |
+| 2026-11-22 | F6 abierta (rama `docs/users-roles-design`): D14 (alta de usuarios por el administrador, con `full_name` obligatorio; invitación por email pendiente), D15 (orden y fallos del alta) y D16 (3 RPC adicionales, a confirmar); tareas F6.1 a F6.6                                                                                           |
+| 2026-11-22 | F6.1 completada: HU (7 de usuarios, 6 de roles) y contratos (9 de usuarios, 7 de roles) redactados; `Estructura_de_carpetas.md` y `PROGRESO.md` sincronizados. D16 sigue a confirmar; pendiente revisar `Reglas_de_negocio.md`                                                                                                            |
