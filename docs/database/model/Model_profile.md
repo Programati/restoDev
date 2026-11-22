@@ -41,7 +41,7 @@ Enum `profile_status`: `pending` (invitado que no completó el alta), `active` (
 - Solo un perfil `active` puede ejercer permisos: `private.has_permission` lo exige.
 - **Bajas:** no hay baja lógica con `deleted_at`. Dar de baja es pasar `status` a `inactive`; el borrado de la cuenta de Auth (que elimina el perfil por `CASCADE`) es excepcional.
 - **Sincronización con Auth (D5, F5):** al pasar a `inactive` se pone `banned_until` en `auth.users`; al reactivar, se limpia. Se hace con la API de administración de Auth y una clave `service_role` solo de servidor, validada en `env.ts` y nunca `NEXT_PUBLIC_`. Sin esto, el estado de la aplicación no corta sesiones ni la renovación de tokens.
-- **Dependencias:** no se puede inactivar ni borrar al último usuario con `admin.access` (guardia de F5).
+- **Dependencias:** no se puede inactivar ni borrar al último administrador (perfil `active` con rol activo que tenga `admin.access`). Lo aplica el trigger `profiles_protect_last_admin` (`BEFORE UPDATE OR DELETE`, función `private.protect_last_admin`) con `23514`, para todos, incluidas migraciones y SQL Editor (F5.5). Como el borrado de la cuenta de Auth cae en cascada sobre `profiles`, también queda bloqueado para el último administrador.
 - **Trazabilidad:** `updated_at` lo mantiene `public.set_updated_at()` (trigger `profiles_set_updated_at`). Los cambios quedan en `audit_logs` desde F4.
 - **Backfill:** los usuarios que ya existían al crear la tabla recibieron un perfil `active` (migración `backfill_profiles`, idempotente).
 
@@ -50,7 +50,7 @@ Enum `profile_status`: `pending` (invitado que no completó el alta), `active` (
 - **RLS:** habilitada desde la creación de la tabla.
 - **Lectura:** cada usuario lee su propio perfil (política `profiles_select_own`, `id = (select auth.uid())`). Quien tenga `users.manage` lee todos (política agregada en F2).
 - **Inserción:** ninguna desde la API; la hace el trigger `handle_new_auth_user` (`SECURITY DEFINER`).
-- **Actualización:** sin `GRANT` directo. RLS controla filas, no columnas: con un `UPDATE` directo el usuario podría reactivarse cambiando `status`. Edición de `full_name`, `phone` y `avatar_path` y cambio de `status` por RPC (D4, F5).
+- **Actualización:** sin `GRANT` directo. RLS controla filas, no columnas: con un `UPDATE` directo el usuario podría reactivarse cambiando `status`. Edición de `full_name`, `phone` y `avatar_path` y cambio de `status` por RPC (D4), pendientes hasta que exista la pantalla de gestión (D13).
 - **Baja:** sin `GRANT DELETE`.
 - **GRANT:** solo `select` a `authenticated`; nada para `anon`.
 - **Acceso provisional:** ninguno.

@@ -1,6 +1,6 @@
 # HU-CAT-004 — Actualizar categoría
 
-> Estado: Implementada (Server Action). Pendientes: Route Handler y auditoría.
+> Estado: Implementada (Server Action). Pendiente: Route Handler.
 
 ## Historia
 
@@ -54,15 +54,15 @@ menú**.
 - Dar de baja ([HU-CAT-005](./HU_eliminar_categoria.md)) y restaurar una categoría.
 - Modificar varias categorías a la vez (por ejemplo, reordenar en lote).
 - Control de versión optimista.
-- Registro en `audit_logs`.
 
 ## Alcance actual y pendientes
 
 - **Permiso:** `categories.manage`, también para las categorías dadas de baja. La Action lo comprueba
   antes de validar y RLS lo refuerza (`categories_update_by_permission`).
-- **Implementado:** Server Action con verificación de permiso, schema Zod y Servicio.
-- **Pendiente:** el endpoint `PATCH /api/categories/:id` (planificado, todavía no existe) y la
-  auditoría (Fase 4).
+- **Implementado:** Server Action con verificación de permiso, schema Zod y Servicio. Cada
+  modificación queda registrada en `audit_logs` (evento `update`) por el trigger `audit_categories`
+  (Fase 4); lo hace la base, no la Action.
+- **Pendiente:** el endpoint `PATCH /api/categories/:id` (planificado, todavía no existe).
 
 ## Decisiones pendientes
 

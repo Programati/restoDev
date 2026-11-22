@@ -154,12 +154,12 @@ resuelve con sufijo numérico.
 - **Action (antes de Zod):** sesión (`UNAUTHORIZED`) y permiso `categories.manage` (`FORBIDDEN`) con `requirePermission`.
 - **Zod en la Action:** UUID del `id`, tipo/longitud/recorte de `name` e `icon_name`, entero no negativo para `display_order`, booleano para `active` y al menos un campo a modificar.
 - **Servicio:** generación del `slug` y resolución de colisiones excluyendo la propia fila, `updated_by`, reintento ante carrera, traducción de `23505`, `42501` y fila no encontrada.
-- **Base de datos:** unicidad de `name` y `slug`, formato y longitudes, `display_order >= 0`. No requiere migración nueva.
+- **Base de datos:** unicidad de `name` y `slug`, formato y longitudes, `display_order >= 0`. Además, el trigger `audit_categories` registra la modificación en `audit_logs`. No requiere migración nueva.
 
 ## Efectos secundarios
 
 - Tras modificar la categoría, se llama a `revalidatePath("/categories")`.
-- Pendiente: registrar el cambio en `audit_logs` cuando exista el mecanismo de auditoría.
+- La base registra la modificación en `audit_logs` (evento `update`, con `old_data`, `new_data` y el usuario de la sesión como `actor_id`) mediante el trigger `audit_categories`. Lo hace el trigger, no la Action ni el Servicio.
 
 ## Flujo
 
@@ -186,6 +186,7 @@ sequenceDiagram
     Service->>Service: elegir slug libre (sufijo numérico si hace falta)
   end
   Service->>Supabase: update en categories por id + select
+  Note over Supabase: trigger audit_categories registra el evento update
   Supabase-->>Service: fila | null | error (unicidad, permisos)
   Service-->>Action: CategoryDetail | ServiceError (NOT_FOUND, CONFLICT, FORBIDDEN)
   Action-->>Front: ActionResult<CategoryDetail>
@@ -193,6 +194,6 @@ sequenceDiagram
 
 ## Estado de implementación
 
-- **Implementado:** Action (con verificación de permiso), schema Zod, Servicio y tipos (`UpdateCategoryInput`, `UpdateCategoryDto`).
-- **Pendiente:** Route Handler `PATCH /api/categories/:id` y auditoría.
+- **Implementado:** Action (con verificación de permiso), schema Zod, Servicio, tipos (`UpdateCategoryInput`, `UpdateCategoryDto`) y registro de auditoría (trigger `audit_categories`).
+- **Pendiente:** Route Handler `PATCH /api/categories/:id`.
 - **A confirmar:** qué hacer al desactivar (`active: false`) una categoría con productos activos cuando exista `products`.

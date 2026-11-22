@@ -1,6 +1,6 @@
 # HU-CAT-001 — Crear categoría
 
-> Estado: Implementada (Server Action). Pendientes: Route Handler y auditoría
+> Estado: Implementada (Server Action). Pendiente: Route Handler
 > (ver "Alcance actual y pendientes").
 
 ## Historia
@@ -49,16 +49,15 @@ Como **administrador**, quiero **crear una categoría**, para **organizar los pr
 - Editar, dar de baja o restaurar una categoría (ver HU-CAT-004 y HU-CAT-005).
 - Comprobar que `icon_name` exista en un catálogo de íconos.
 - Asociar productos a la categoría.
-- Registro en `audit_logs`.
 
 ## Alcance actual y pendientes
 
 - **Permiso:** `categories.manage`. La Action lo comprueba antes de validar (`FORBIDDEN`) y RLS lo
   refuerza (política `categories_insert_by_permission`).
 - **Implementado:** Server Action con verificación de permiso, schema Zod, Servicio, migraciones y
-  formulario.
-- **Pendiente:** el endpoint `POST /api/categories` (objetivo futuro, todavía no existe); el
-  registro en `audit_logs`, hasta implementar el mecanismo de auditoría (Fase 4).
+  formulario. El alta queda registrada en `audit_logs` (evento `insert`) por el trigger
+  `audit_categories` (Fase 4); lo hace la base, no la Action.
+- **Pendiente:** el endpoint `POST /api/categories` (objetivo futuro, todavía no existe).
 
 ## Decisiones pendientes
 

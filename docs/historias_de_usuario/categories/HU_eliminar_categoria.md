@@ -51,7 +51,6 @@ que ya no corresponde al menú sin perder su historial**.
 - Restaurar una categoría dada de baja (HU futura, sin definir).
 - Dar de baja varias categorías a la vez.
 - Dar de baja o reasignar los productos de la categoría.
-- Registro en `audit_logs`.
 
 ## Alcance actual y pendientes
 
@@ -62,11 +61,12 @@ que ya no corresponde al menú sin perder su historial**.
   (`deleteCategoryAction`). La baja es un único `UPDATE` atómico con `deleted_at IS NULL` y
   `active = false`; el Servicio distingue `NOT_FOUND` y los dos `CONFLICT` (ya dada de baja / sigue
   activa) con una consulta posterior. No requirió migración: el `GRANT` de `UPDATE` ya existe y no
-  hay `GRANT` de `DELETE`.
+  hay `GRANT` de `DELETE`. La baja queda registrada en `audit_logs` por el trigger
+  `audit_categories` (Fase 4); como es un `UPDATE` de `deleted_at`, el evento es `update` y no
+  `delete`.
 - **Pendiente:** la regla de productos activos (criterio 9), que debe crearse en la base junto con
   `products`; el endpoint (a definir); la pantalla/botón en el front (flujo: desactivar y luego dar
-  de baja); la auditoría (Fase 4); y completar la tabla de
-  verificación de abajo (diferida hasta tener el Front).
+  de baja); y completar la tabla de verificación de abajo (diferida hasta tener el Front).
 - La regla de inactividad (criterio 12) hoy la aplica el Servicio; una escritura directa por la Data
   API podría saltearla. Evaluar un `CHECK (deleted_at is null or active = false)` en la base.
 - Hasta que exista la restauración, una categoría dada de baja solo se puede renombrar

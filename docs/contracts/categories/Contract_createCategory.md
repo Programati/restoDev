@@ -123,12 +123,12 @@ Campos que **no** se reciben: `slug` (se genera a partir de `name`), `deleted_at
   y `slug`.
 - **Base de datos:** también comprueba el formato del `slug` (y su largo máximo de 100), que
   `display_order` no sea negativo y los límites de longitud de `name` (2–80, tras recortar) e
-  `icon_name` (1–50).
+  `icon_name` (1–50). Además, el trigger `audit_categories` registra el alta en `audit_logs`.
 
 ## Efectos secundarios
 
 - Tras crear la categoría, se llama a `revalidatePath("/categories")`; la vista/listado de categorías todavía no está implementada.
-- Pendiente: registrar el cambio en `audit_logs` cuando exista el mecanismo de auditoría.
+- La base registra el alta en `audit_logs` (evento `insert`, con `new_data` y el usuario de la sesión como `actor_id`) mediante el trigger `audit_categories`. Lo hace el trigger, no la Action ni el Servicio.
 
 ## Flujo
 
@@ -151,6 +151,7 @@ sequenceDiagram
   Action->>Service: createCategory(supabase, dto, userId)
   Service->>Service: generar slug desde name
   Service->>Supabase: insert en categories (RLS)
+  Note over Supabase: trigger audit_categories registra el evento insert
   Supabase-->>Service: fila | error (unicidad, permisos)
   Service-->>Action: data | ServiceError (CONFLICT, FORBIDDEN)
   Action-->>Front: ActionResult
@@ -158,6 +159,6 @@ sequenceDiagram
 
 ## Estado de implementación
 
-- **Implementado:** Server Action, verificación de permiso, validación Zod, Servicio, persistencia en Supabase y gestión de
-  errores.
-- **Pendiente:** Route Handler `POST /api/categories` y registro de auditoría.
+- **Implementado:** Server Action, verificación de permiso, validación Zod, Servicio, persistencia en Supabase, gestión de
+  errores y registro de auditoría (trigger `audit_categories`).
+- **Pendiente:** Route Handler `POST /api/categories`.

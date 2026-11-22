@@ -1,6 +1,6 @@
 # roles
 
-> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger de `is_system` y las RPC de escritura llegan en la Fase 5.
+> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger de `is_system` está activo desde F5.3 (`roles_is_system_guard`). Las RPC de escritura quedan pendientes hasta la pantalla de gestión (D13).
 
 ## Estructura
 
@@ -35,7 +35,7 @@
 ## Reglas de negocio
 
 - **Roles sembrados (D1):** solo `admin` (nombre "Administrador"), con `is_system = true` y todos los permisos del catálogo. `staff`, `delivery`, cajero y mesero se agregan junto con el módulo que los necesite.
-- Un rol `is_system` no se borra, no cambia de `code` y no se desactiva. La regla va en un trigger `BEFORE UPDATE OR DELETE` (F5), no solo en RPC, para que no se pueda saltear por la Data API. **Hasta F5 esta protección no existe.**
+- Un rol `is_system` no se borra, no cambia de `code`, no se desactiva y no cambia su flag `is_system`. Lo aplica el trigger `roles_protect_system` (`BEFORE UPDATE OR DELETE`, función `private.protect_system_roles`, `SECURITY DEFINER`, `EXECUTE` revocado a todos) y rechaza con `23514`. Vale para todos, incluidas las migraciones y el SQL Editor, y no se puede saltear por la Data API. Solo protege las filas que ya eran del sistema.
 - Los permisos de un rol con `is_active = false` no se aplican.
 - **Bajas:** no hay baja lógica con `deleted_at`; se desactiva con `is_active`. El borrado físico solo es posible para roles no `is_system` y sin asignaciones, por RPC con `roles.manage`.
 - **Trazabilidad:** `updated_at` con `public.set_updated_at()` (trigger `roles_set_updated_at`); cambios en `audit_logs` desde F4.
@@ -44,9 +44,9 @@
 
 - **RLS:** habilitada desde la creación de la tabla.
 - **Lectura:** usuarios autenticados con perfil activo (política `roles_select_active_users`; el panel necesita mostrar nombres de rol).
-- **Inserción, actualización y borrado:** sin `GRANT` directo; solo `roles.manage` por RPC (`admin_create_role`, `admin_update_role`, `admin_delete_role`, F5). El seed lo hace la migración.
+- **Inserción, actualización y borrado:** sin `GRANT` directo. Las RPC (`admin_create_role`, `admin_update_role`, `admin_delete_role`, con `roles.manage`) están **pendientes** hasta que exista la pantalla de gestión (D13); mientras tanto, solo migración o SQL Editor. El seed lo hace la migración.
 - **GRANT:** solo `select` a `authenticated`; nada para `anon`.
-- **Validación en base de datos:** formato de `code`, longitudes y trigger de `is_system` (F5).
+- **Validación en base de datos:** formato de `code`, longitudes y trigger de `is_system` (F5.3).
 - Sin publicación en Realtime.
 
 ## Validaciones
@@ -54,7 +54,7 @@
 - Crear un rol válido; rechazar `code` con mayúsculas, espacios o de 1 carácter.
 - Rechazar `name` duplicado sin distinguir mayúsculas y `code` duplicado.
 - Rechazar borrar un rol con usuarios asignados.
-- Rechazar borrar, renombrar el `code` o desactivar `admin` (F5).
+- Rechazar borrar, renombrar el `code`, desactivar o cambiar `is_system` de un rol del sistema (`23514`). Verificado en F5.3.
 - Un rol inactivo no concede permisos (`has_permission` devuelve `false`).
 - RLS: usuario autenticado lee; escribir directo falla con `42501`; `anon` no lee.
 

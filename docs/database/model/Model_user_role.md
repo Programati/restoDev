@@ -1,6 +1,6 @@
 # user_roles
 
-> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `create_authorization_functions` y `create_access_read_policies`), aplicada al proyecto de pruebas. Las protecciones (anti-escalada y último administrador) llegan en la Fase 5.
+> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `create_authorization_functions` y `create_access_read_policies`), aplicada al proyecto de pruebas. Las protecciones anti-escalada (F5.4) y del último administrador (F5.5) están activas. Las RPC de escritura quedan pendientes hasta la pantalla de gestión (D13).
 
 ## Estructura
 
@@ -31,8 +31,8 @@
 
 - Cadena de autorización: `usuario → user_roles → roles → role_permissions → permissions`. Un permiso se aplica solo si el perfil está `active` y el rol tiene `is_active = true`. La resuelven `private.has_permission(code)`, `private.has_role(code)` e `private.is_admin()` (`has_role('admin')`).
 - Un usuario sin filas no tiene permisos.
-- Nadie puede asignarse roles a sí mismo (anti-escalada, F5). **Hasta F5 esta protección no existe.**
-- No se puede quitar el rol `admin` al último usuario con `admin.access` (guardia de F5).
+- Nadie puede asignarse ni quitarse roles a sí mismo. Lo aplica el trigger `user_roles_protect_assignments` (`BEFORE INSERT OR UPDATE OR DELETE`, función `private.protect_access_assignments`): con `auth.uid()` exige `users.manage` y rechaza tocar los propios roles con `42501`. Sin `auth.uid()` (migraciones, SQL Editor, servidor) no controla nada, por eso el seed y el alta del primer admin siguen funcionando.
+- No se puede quitar el rol que da `admin.access` al último administrador (perfil `active` con rol activo). Lo aplica `user_roles_protect_last_admin` (función `private.protect_last_admin`, `BEFORE UPDATE OR DELETE`) con `23514`, para todos, incluidas migraciones y SQL Editor. Límite conocido: no cubre borrar `admin.access` de `role_permissions` ni desactivar un rol no sistema que lo tenga.
 - **Primer administrador (D8):** las migraciones no siembran usuarios, porque cada entorno tiene los suyos. La primera asignación de `admin` es un SQL documentado en `docs/database/supabase-cli.md` (sección 6.2), ejecutado una vez por entorno. En el proyecto de pruebas se ejecutó el 2026-11-21 para `admin@resto.test`.
 - **Bajas:** no aplica baja lógica; quitar un rol es borrar la fila.
 - **Trazabilidad:** `record_id` del evento de auditoría es `"user_id:role_id"`.
@@ -41,8 +41,8 @@
 
 - **RLS:** habilitada desde la creación de la tabla.
 - **Lectura:** cada usuario ve sus propias filas (necesita sus roles para armar el menú); `users.manage` ve todas (política `user_roles_select_own_or_users_manage`).
-- **Inserción, actualización y borrado:** sin `GRANT` directo; solo por RPC con `users.manage` y sin autoasignación.
-- **Validación en base de datos:** FK y trigger anti-escalada y de último administrador (F5).
+- **Inserción, actualización y borrado:** sin `GRANT` directo. Las RPC (`admin_assign_role`, `admin_remove_role`, con `users.manage`) están **pendientes** hasta la pantalla de gestión (D13); mientras tanto, solo migración o SQL Editor.
+- **Validación en base de datos:** FK y triggers anti-escalada (F5.4) y de último administrador (F5.5).
 - **GRANT:** solo `select` a `authenticated`; nada para `anon`; sin Realtime.
 
 ## Validaciones
@@ -50,7 +50,7 @@
 - Asignar un rol válido; rechazar el par duplicado y referencias inexistentes.
 - Rechazar borrar un rol con asignaciones.
 - Borrar un perfil elimina sus asignaciones.
-- Rechazar la autoasignación y el retiro del último admin (F5).
+- Rechazar la autoasignación (`42501`) y el retiro del último admin (`23514`). Verificado en F5.4 y F5.5.
 - Casos de `has_permission`: sin sesión, sin rol, perfil `inactive`, perfil `pending`, rol inactivo, admin.
 - RLS: un usuario lee solo sus filas; escribir directo falla con `42501`.
 

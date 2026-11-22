@@ -1,6 +1,6 @@
 # role_permissions
 
-> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger anti-escalada llega en la Fase 5.
+> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger anti-escalada está activo desde F5.4 (`access_anti_escalation`). Las RPC de escritura quedan pendientes hasta la pantalla de gestión (D13).
 
 ## Estructura
 
@@ -40,8 +40,8 @@
 
 - **RLS:** habilitada desde la creación de la tabla.
 - **Lectura:** `roles.manage` (política `role_permissions_select_roles_manage`).
-- **Inserción, actualización y borrado:** sin `GRANT` directo; solo por RPC con `roles.manage`. Es la tabla más sensible del dominio: define quién puede hacer qué.
-- **Anti-escalada (F5):** trigger `BEFORE INSERT/UPDATE/DELETE` que exige `roles.manage` y bloquea la autoasignación. Debe permitir migraciones y seed (sin `auth.uid()`), por eso se agrega después de sembrar.
+- **Inserción, actualización y borrado:** sin `GRANT` directo; la RPC `admin_set_role_permissions` (con `roles.manage`) está **pendiente** hasta la pantalla de gestión (D13); mientras tanto, solo migración o SQL Editor. Es la tabla más sensible del dominio: define quién puede hacer qué.
+- **Anti-escalada (F5.4):** trigger `role_permissions_protect_assignments` (`BEFORE INSERT OR UPDATE OR DELETE`, función `private.protect_access_assignments`). Con `auth.uid()` exige `roles.manage` y bloquea modificar los permisos de un rol que el propio actor tiene asignado (autoasignación indirecta), con `42501`. Sin `auth.uid()` (migraciones, seed, SQL Editor, servidor) no controla nada. **Límite conocido (F5.5):** quitar `admin.access` de un rol no está cubierto por la guardia del último administrador.
 - **GRANT:** solo `select` a `authenticated`; nada para `anon`; sin Realtime.
 
 ## Validaciones

@@ -145,12 +145,12 @@ Campos que **no** se reciben: `deleted_at` (lo fija el Servicio con la fecha act
 - **Action (antes de Zod):** sesión (`UNAUTHORIZED`) y permiso `categories.manage` (`FORBIDDEN`) con `requirePermission`.
 - **Zod en la Action:** `id` presente y con formato UUID.
 - **Servicio:** `UPDATE` atómico con `deleted_at IS NULL` y `active = false`, `deleted_at` y `updated_by`, distinción entre `NOT_FOUND` y los dos `CONFLICT`, traducción de `42501`.
-- **Base de datos:** sin `GRANT` de `DELETE`, la baja física es imposible. No requiere migración nueva por ahora; la regla de productos llegará junto con `products`.
+- **Base de datos:** sin `GRANT` de `DELETE`, la baja física es imposible. El trigger `audit_categories` registra la baja en `audit_logs`. No requiere migración nueva por ahora; la regla de productos llegará junto con `products`.
 
 ## Efectos secundarios
 
 - Tras la baja, se llama a `revalidatePath("/categories")`.
-- Pendiente: registrar la baja en `audit_logs` cuando exista el mecanismo de auditoría.
+- La base registra la baja en `audit_logs` mediante el trigger `audit_categories`. Como la baja lógica es un `UPDATE` de `deleted_at`, el evento es `update` (con `deleted_at` en `new_data` y el usuario de la sesión como `actor_id`), no `delete`. Lo hace el trigger, no la Action ni el Servicio.
 
 ## Flujo
 
@@ -172,6 +172,7 @@ sequenceDiagram
   Zod-->>Front: VALIDATION_ERROR (si falla)
   Action->>Service: deleteCategory(supabase, dto, userId)
   Service->>Supabase: update deleted_at, updated_by where id, deleted_at is null y active = false + select
+  Note over Supabase: trigger audit_categories registra el evento update
   Supabase-->>Service: fila | null | error (permisos)
   opt ninguna fila afectada
     Service->>Supabase: select id, active, deleted_at where id
@@ -185,6 +186,6 @@ sequenceDiagram
 
 ## Estado de implementación
 
-- **Implementado:** Action (con verificación de permiso), schema Zod, Servicio y tipos (`DeleteCategoryInput`, `DeleteCategoryDto`), incluida la precondición de categoría inactiva.
-- **Pendiente:** regla de productos activos en la base (junto con `products`), Route Handler, auditoría y, opcionalmente, el `CHECK` en la base para la regla de inactividad.
+- **Implementado:** Action (con verificación de permiso), schema Zod, Servicio y tipos (`DeleteCategoryInput`, `DeleteCategoryDto`), incluida la precondición de categoría inactiva, y registro de auditoría (trigger `audit_categories`).
+- **Pendiente:** regla de productos activos en la base (junto con `products`), Route Handler y, opcionalmente, el `CHECK` en la base para la regla de inactividad.
 - **A confirmar (HU-CAT-005):** `CONFLICT` si ya está dada de baja y que se devuelva la categoría con `deleted_at`.

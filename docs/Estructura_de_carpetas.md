@@ -147,7 +147,14 @@ restoDev/
 │   │   ├── 20261121185228_create_has_permission_bridge.sql
 │   │   ├── 20261121190157_categories_permission_policies.sql
 │   │   ├── 20261121190510_drop_categories_provisional_policy.sql
-│   │   └── 20261121190825_categories_updated_by_on_delete_set_null.sql
+│   │   ├── 20261121190825_categories_updated_by_on_delete_set_null.sql
+│   │   ├── 20261122001317_create_audit_logs.sql
+│   │   ├── 20261122001855_create_audit_trigger_function.sql
+│   │   ├── 20261122002030_audit_triggers_access_tables.sql
+│   │   ├── 20261122002343_audit_trigger_categories.sql
+│   │   ├── 20261122010840_roles_is_system_guard.sql
+│   │   ├── 20261122011235_access_anti_escalation.sql
+│   │   └── 20261122011641_last_admin_guard.sql
 │   ├── .gitignore
 │   └── config.toml
 ├── .env.example
