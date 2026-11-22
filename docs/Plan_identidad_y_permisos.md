@@ -13,15 +13,15 @@
 
 ## 1. Estado general
 
-| Fase | Contenido                                           | Rama sugerida                    | Depende de | Estado                                                                                         |
-| ---- | --------------------------------------------------- | -------------------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
-| P    | Cerrar `deleteCategory` y sincronizar documentación | `feature/daleteCategory`         | —          | Completada (verificación de HU-CAT-005 diferida a F3.8, y esta al Front)                       |
-| F0   | Decisiones y modelos documentados (sin código)      | `docs/identity-access-design`    | P          | Completada (PR mergeado)                                                                       |
-| F1   | Base de identidad: `profiles`                       | `feature/identity-profiles`      | F0         | Completada (PR mergeado)                                                                       |
-| F2   | Roles, permisos y funciones de autorización         | `feature/roles-permissions`      | F1         | Implementada y verificada en la base; falta el PR                                              |
-| F3   | Migrar `categories` a permisos                      | `feature/categories-permissions` | F2         | Implementada y verificada (F3.1 a F3.7); F3.8: documentación hecha, pruebas diferidas al Front |
-| F4   | Auditoría (`audit_logs` + triggers)                 | `feature/audit-logs`             | F3         | Pendiente                                                                                      |
-| F5   | Protecciones, RPC administrativas y cierre          | `feature/access-hardening`       | F4         | Pendiente                                                                                      |
+| Fase | Contenido                                           | Rama sugerida                    | Depende de | Estado                                                                          |
+| ---- | --------------------------------------------------- | -------------------------------- | ---------- | ------------------------------------------------------------------------------- |
+| P    | Cerrar `deleteCategory` y sincronizar documentación | `feature/daleteCategory`         | —          | Completada (verificación de HU-CAT-005 diferida a F3.8, y esta al Front)        |
+| F0   | Decisiones y modelos documentados (sin código)      | `docs/identity-access-design`    | P          | Completada (PR mergeado)                                                        |
+| F1   | Base de identidad: `profiles`                       | `feature/identity-profiles`      | F0         | Completada (PR mergeado)                                                        |
+| F2   | Roles, permisos y funciones de autorización         | `feature/roles-permissions`      | F1         | Completada (PR mergeado)                                                        |
+| F3   | Migrar `categories` a permisos                      | `feature/categories-permissions` | F2         | Completada (PR mergeado); F3.8: documentación hecha, pruebas diferidas al Front |
+| F4   | Auditoría (`audit_logs` + triggers)                 | `feature/audit-logs`             | F3         | En curso (F4.1 y F4.2)                                                          |
+| F5   | Protecciones, RPC administrativas y cierre          | `feature/access-hardening`       | F4         | Pendiente                                                                       |
 
 Una fase = una rama = un PR hacia `develop` (squash), con `pnpm run check:full` en verde. Las migraciones viajan en el mismo PR que el código que las usa y los tipos se regeneran en ese PR (`Git_workflow.md`, sección 8).
 
@@ -131,7 +131,7 @@ Migraciones: `create_profiles` (F1.2 a F1.5) y `backfill_profiles` (F1.6). Merge
 
 ### Fase 2. Roles y permisos
 
-Migraciones: `create_access_tables` (F2.2), `create_authorization_functions` (F2.3), `seed_roles_permissions` (F2.4) y `create_access_read_policies` (F2.6).
+Migraciones: `create_access_tables` (F2.2), `create_authorization_functions` (F2.3), `seed_roles_permissions` (F2.4) y `create_access_read_policies` (F2.6). Mergeada en `develop`.
 
 - [x] F2.1 Rama `feature/roles-permissions`.
 - [x] F2.2 Migración de tablas: `roles`, `permissions` (PK natural `code`), `role_permissions` y `user_roles`, con PK compuestas, FK con las reglas `ON DELETE` del DER (sección 3.2), CHECK de formato/longitud e índices. RLS y `GRANT select` de cada una (las escrituras llegan por migración o RPC).
@@ -150,7 +150,7 @@ Migraciones: `create_access_tables` (F2.2), `create_authorization_functions` (F2
 
 ### Fase 3. Migrar `categories` a permisos (punto crítico)
 
-Es una migración de alteración, no de recreación. Orden obligatorio:
+Es una migración de alteración, no de recreación. Mergeada en `develop`. Orden obligatorio:
 
 - [x] F3.1 Rama `feature/categories-permissions`.
 - [x] F3.1b Resolver D12: migración con la función puente en `public` (o `get_current_access_context()`), con `REVOKE EXECUTE` a `public` y `anon` y `GRANT` a `authenticated`; probar que un usuario con y sin permiso recibe `true`/`false` vía `supabase.rpc()`.
@@ -167,13 +167,13 @@ Es una migración de alteración, no de recreación. Orden obligatorio:
   - `getCategoryAction`, `listCategoriesAction`: exigen `categories.read`, y `categories.manage` si `include_deleted` es `true`.
   - El permiso se comprueba **antes** de validar con Zod y devuelve `FORBIDDEN` con los mensajes ya documentados.
 - [x] F3.7 `/admin`: mostrar el nombre del perfil en lugar de "Hola ADMINISTRADOR" y exigir `admin.access` en el layout o la página (no en el proxy).
-- [ ] F3.8 Documentación: `Model_category.md` (Seguridad y bloque provisorio), los 5 `Contract_*Category.md`, `Contract_categories.md`, las 5 HU (`Permiso actual` y `Pendiente`) y `PROGRESO.md` (cerrar las decisiones abiertas de roles, RLS provisoria y `/admin`). **Incluye completar la tabla de verificación de HU-CAT-005** (diferida desde P.2), probando sus criterios junto con la matriz de la sección 7; el criterio 9 sigue pendiente hasta que exista `products`. **Estado:** documentación sincronizada. **Las pruebas de la matriz de la sección 7 y las tablas de verificación de las 5 HU quedan diferidas hasta tener el Front** (decisión del 2026-11-21: todavía no hay pantallas ni Route Handlers para ejercitar las Actions). Esa parte de F3.8 queda abierta; el PR de la fase puede abrirse sin ella, dejando el diferimiento anotado en el PR.
+- [ ] F3.8 Documentación: `Model_category.md` (Seguridad y bloque provisorio), los 5 `Contract_*Category.md`, `Contract_categories.md`, las 5 HU (`Permiso actual` y `Pendiente`) y `PROGRESO.md` (cerrar las decisiones abiertas de roles, RLS provisoria y `/admin`). **Incluye completar la tabla de verificación de HU-CAT-005** (diferida desde P.2), probando sus criterios junto con la matriz de la sección 7; el criterio 9 sigue pendiente hasta que exista `products`. **Estado:** documentación sincronizada y PR mergeado. **Las pruebas de la matriz de la sección 7 y las tablas de verificación de las 5 HU quedan diferidas hasta tener el Front** (decisión del 2026-11-21: todavía no hay pantallas ni Route Handlers para ejercitar las Actions). Esa parte de F3.8 queda abierta.
 - **Verificación:** la matriz de la sección 7 completa para las 5 operaciones, vía Action y vía `GET /api/categories`; escrituras directas a la Data API sin permiso fallan; `check:full`. **Diferida hasta tener el Front** (ver F3.8). Lo verificado en F3.1 a F3.7 con SQL y con el usuario admin se mantiene como está.
 - **Impacto en `categories`:** es la fase donde cambia: política, FK, Actions, front y documentación.
 
 ### Fase 4. Auditoría
 
-- [ ] F4.1 Rama `feature/audit-logs`.
+- [ ] F4.1 Rama `feature/audit-logs` desde `develop`.
 - [ ] F4.2 Migración: `audit_logs` (`id bigint` identidad, `actor_id` → `auth.users(id)` `ON DELETE SET NULL`, `action`, `table_name`, `record_id`, `old_data`, `new_data`, `created_at`), índices `(created_at desc)`, `(table_name, record_id)`, `(actor_id)`. RLS: lectura con `audit.read`. `GRANT select` únicamente; `REVOKE UPDATE, DELETE, TRUNCATE` a todos los roles.
 - [ ] F4.3 Trigger genérico `SECURITY DEFINER` (`AFTER`, así no interfiere con `set_updated_at`): `actor_id = auth.uid()` (NULL si actúa el servidor o una migración), `record_id` compuesto (`"user_id:role_id"`, `"role_id:permission_code"`) en las tablas sin `id`, exclusión de campos de D9. `REVOKE EXECUTE` de la función.
 - [ ] F4.4 Activar el trigger primero en `profiles`, `roles`, `permissions`, `role_permissions`, `user_roles`; verificar; después en `categories`.
@@ -244,3 +244,4 @@ Además, para cada tabla expuesta: intentar escribir **sin pasar por la Action**
 | 2026-11-21 | Registro público de Auth desactivado en el proyecto de pruebas (cierra el pendiente de D7)                                                                                                               |
 | 2026-11-21 | F3 implementada y verificada hasta F3.7 (D12 resuelta con la función puente; `/admin` con `admin.access` y `requirePagePermission`); F3.8: documentación sincronizada, tablas de verificación pendientes |
 | 2026-11-21 | F3.8: las pruebas de la matriz (sección 7) y las tablas de verificación de las 5 HU se difieren hasta tener el Front; la fase queda lista para abrir su PR con ese diferimiento anotado                  |
+| 2026-11-21 | F2 y F3 completadas: PRs de `feature/roles-permissions` y `feature/categories-permissions` mergeados en `develop`; F3.8 sigue abierta solo en las pruebas diferidas al Front. Se inicia la F4            |

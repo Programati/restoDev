@@ -6,10 +6,10 @@
 ## Proyecto
 
 - **Nombre:** resto-app (`restoDev`)
-- **Rama:** `feature/categories-permissions` (Fase 3 del plan de identidad y permisos)
-- **Cambios locales sin commit ni PR:** migraciones de la Fase 3 (`create_has_permission_bridge`, `categories_permission_policies`, `drop_categories_provisional_policy` y `categories_updated_by_on_delete_set_null`, ya aplicadas al proyecto de pruebas), `requirePermission` en las Actions, `requirePagePermission`, `/admin` y la documentación de la fase
-- **PRs anteriores:** los PR de setup, Supabase, entorno, autenticación, `createCategory`, `deleteCategory`, la documentación de la Fase 0 y la Fase 1 (`profiles`) están completados y mergeados en `develop`
-- **Estado actual:** Fase 3 (migrar `categories` a permisos) implementada y verificada (F3.1 a F3.7); F3.8: documentación sincronizada. **Las pruebas de la matriz de la sección 7 y las tablas de verificación de las HU quedan diferidas hasta tener el Front** (decisión del 2026-11-21); la fase puede cerrarse con su PR dejando ese diferimiento anotado. Detalle en `docs/Plan_identidad_y_permisos.md`
+- **Rama:** `develop` (todas las fases anteriores mergeadas). Próxima rama: `feature/audit-logs` (Fase 4: auditoría, ver `docs/Plan_identidad_y_permisos.md`)
+- **Cambios locales sin commit ni PR:** ninguno
+- **PRs anteriores:** los PR de setup, Supabase, entorno, autenticación, `createCategory`, `deleteCategory`, la documentación de la Fase 0, la Fase 1 (`profiles`), la Fase 2 (`feature/roles-permissions`) y la Fase 3 (`feature/categories-permissions`) están completados y mergeados en `develop`
+- **Estado actual:** Fases 0 a 3 del plan de identidad y permisos completas y mergeadas. **Las pruebas de la matriz de la sección 7 y las tablas de verificación de las HU quedan diferidas hasta tener el Front** (decisión del 2026-11-21; tarea F3.8, abierta en esa parte). Siguiente: Fase 4 (`audit_logs` + triggers). Detalle en `docs/Plan_identidad_y_permisos.md`
 - **Gestor:** pnpm 12.11.2 · Node 24.22.1
 
 ## Stack
@@ -138,23 +138,23 @@
 - [x] Fase 1 (`profiles`): migraciones aplicadas, verificación de base completa, `createCategory` comprobado después del cambio y PR mergeado en `develop`
 - [x] Fase 2: migraciones de tablas, funciones de autorización, seed y políticas de lectura aplicadas al proyecto de pruebas; primer admin asignado; verificación de funciones y políticas completa; tipos regenerados; `createCategory` comprobado; `format` y `check:full` aprobados
 - [x] Registro público de Auth ("Allow new users to sign up") desactivado en el proyecto de pruebas el 2026-11-21
-- [ ] Fase 2: abrir y mergear el PR de `feature/roles-permissions`
+- [x] Fase 2: PR de `feature/roles-permissions` abierto y mergeado en `develop`
 - [x] Fase 3 (F3.1 a F3.7): función puente `has_permission` (D12), políticas de `categories` por permiso, política provisoria eliminada, `updated_by` con `ON DELETE SET NULL`, `requirePermission` en las 5 Actions, `/admin` con `admin.access` y `requirePagePermission`; verificado
 - [x] F3.8 (parte): documentación de la Fase 3 sincronizada (modelo, contratos, HU, estructura y guías)
 - [ ] F3.8: completar las tablas de verificación de las HU de `categories` y la matriz de la sección 7 del plan, con los resultados reales de las pruebas — **diferido hasta tener el Front** (decisión del 2026-11-21); hasta entonces las tablas de las HU quedan en "Pendiente"
-- [ ] Fase 3: abrir y mergear el PR de `feature/categories-permissions` (anotar en el PR que la verificación de F3.8 queda diferida al Front)
+- [x] Fase 3: PR de `feature/categories-permissions` abierto y mergeado en `develop` (con la verificación de F3.8 diferida al Front anotada en el PR)
+- [ ] Fase 4 (auditoría): crear la rama `feature/audit-logs` desde `develop` y migración de `audit_logs` (F4.1 y F4.2)
 - [ ] Definir e implementar la protección de la baja frente a productos activos cuando exista la tabla `products`
 - [ ] Crear `docs/Guia_front.md` si se mantiene como entregable; el archivo todavía no existe
 
 ## Próximos pasos
 
-1. Cerrar la Fase 2 si su PR sigue pendiente (`feature/roles-permissions`).
-2. Cerrar la Fase 3: abrir el PR de `feature/categories-permissions` con las pruebas de F3.8 diferidas hasta tener el Front (matriz de la sección 7 y tablas de verificación de las HU).
-3. Fases 4 y 5 del plan: auditoría y protecciones.
-4. Diseñar la migración de `products` y el mecanismo en base de datos que impida dar de baja categorías con productos activos; incluir RLS, políticas y GRANT. No dar por resuelta esa regla mientras `products` no exista.
-5. Completar la interfaz de listado/detalle/edición de categorías cuando se defina su alcance.
-6. Crear `docs/Guia_front.md` y evaluar las herramientas de Front cuando se retome ese trabajo.
-7. Con el Front disponible: ejecutar la matriz de la sección 7 del plan sobre `categories` y completar las tablas de verificación de las 5 HU (cierra F3.8). Se repite sobre todas las tablas en F5.8.
+1. Fase 4 (rama `feature/audit-logs`): tabla `audit_logs`, trigger genérico y activación primero en las tablas de acceso y después en `categories` (F4.1 a F4.6 del plan).
+2. Fase 5 del plan: protecciones, RPC administrativas y cierre.
+3. Diseñar la migración de `products` y el mecanismo en base de datos que impida dar de baja categorías con productos activos; incluir RLS, políticas y GRANT. No dar por resuelta esa regla mientras `products` no exista.
+4. Completar la interfaz de listado/detalle/edición de categorías cuando se defina su alcance.
+5. Crear `docs/Guia_front.md` y evaluar las herramientas de Front cuando se retome ese trabajo.
+6. Con el Front disponible: ejecutar la matriz de la sección 7 del plan sobre `categories` y completar las tablas de verificación de las 5 HU (cierra F3.8). Se repite sobre todas las tablas en F5.8.
 
 ## Decisiones abiertas
 
@@ -210,3 +210,4 @@
 | 2026-11-21 | Registro público de Auth desactivado en el proyecto de pruebas                                                                                                                                                                                                                                                  |
 | 2026-11-21 | Fase 3 (F3.1 a F3.7): función puente `has_permission`, políticas de `categories` por permiso, política provisoria eliminada, `updated_by` con `ON DELETE SET NULL`, permisos en las Actions, `/admin` y `requirePagePermission`; F3.8 con la documentación sincronizada y las tablas de verificación pendientes |
 | 2026-11-21 | F3.8: las pruebas de la matriz (sección 7 del plan) y las tablas de verificación de las 5 HU se difieren hasta tener el Front; HU y plan actualizados con el aviso; la fase queda lista para abrir su PR                                                                                                        |
+| 2026-11-21 | PRs de la Fase 2 (`feature/roles-permissions`) y de la Fase 3 (`feature/categories-permissions`) abiertos y mergeados en `develop`; se inicia la Fase 4 (auditoría)                                                                                                                                             |
