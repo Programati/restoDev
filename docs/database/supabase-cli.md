@@ -204,6 +204,8 @@ end $$;
 - Capturar los rechazos con `exception when others` y mostrar `sqlstate`.
 - Supabase avisa "Potential issue detected" si el bloque contiene `delete`; es esperable, porque nada se guarda.
 - Las funciones `private.*` se pueden llamar directamente desde el bloque (corre como `postgres`) para probar sus casos con distintos `request.jwt.claims`.
+- `reset role` **no** limpia `request.jwt.claims`: al volver a `postgres` hacer también `perform set_config('request.jwt.claims', '', true);`. Si no, `auth.uid()` sigue devolviendo al último actor y los triggers anti-escalada bloquean operaciones que deberían correr sin sesión (por ejemplo, el borrado en cascada de `user_roles`).
+- Dentro de una transacción `now()` no cambia: para probar `updated_at` hay que partir de un valor viejo.
 
 ## 10. Comandos de uso frecuente
 
@@ -227,17 +229,19 @@ end $$;
 
 ## Permisos de tabla (GRANT) en tablas nuevas
 
-En este proyecto las tablas creadas por migración **no reciben permisos automáticos** para los roles de la Data API (`anon`, `authenticated`, `service_role`): solo quedan con `REFERENCES`, `TRIGGER` y `TRUNCATE`. RLS por sí solo no alcanza: Postgres comprueba primero los permisos de tabla y recién después las políticas. Sin `GRANT`, toda consulta falla con `permission denied for table <tabla>` (código `42501`), que los Servicios reportan como `INTERNAL_ERROR`.
+En este proyecto las tablas creadas por migración **no reciben permisos automáticos** para los roles de la Data API (`anon`, `authenticated`, `service_role`): solo quedan con `MAINTAIN`, `REFERENCES`, `TRIGGER` y `TRUNCATE` (`TRUNCATE` se salta RLS). RLS por sí solo no alcanza: Postgres comprueba primero los permisos de tabla y recién después las políticas. Sin `GRANT`, toda consulta falla con `permission denied for table <tabla>` (código `42501`), que los Servicios reportan como `INTERNAL_ERROR`.
 
-**Regla:** toda migración que crea una tabla incluye, en el mismo archivo, RLS, políticas y `GRANT`. Excepción vigente: las tablas de acceso de la Fase 2 (`roles`, `permissions`, `role_permissions`, `user_roles`) se crearon con RLS y `GRANT select` y sus políticas de lectura llegaron en una migración posterior; en el intervalo nadie podía leerlas desde la API.
+**Regla:** toda migración que crea una tabla incluye, en el mismo archivo, RLS, políticas, un `REVOKE ALL` y el `GRANT` mínimo. Excepción vigente: las tablas de acceso de la Fase 2 (`roles`, `permissions`, `role_permissions`, `user_roles`) se crearon con RLS y `GRANT select` y sus políticas de lectura llegaron en una migración posterior; en el intervalo nadie podía leerlas desde la API.
 
 ```sql
 alter table public.<tabla> enable row level security;
 -- políticas...
+revoke all on public.<tabla> from public, anon, authenticated, service_role;
 grant select, insert, update on public.<tabla> to authenticated;
 ```
 
 - Conceder solo lo que el flujo necesita. Sin `DELETE` en tablas con baja lógica.
+- El `REVOKE ALL` va antes del `GRANT`: quita los privilegios por defecto sobrantes (`TRUNCATE`, `MAINTAIN`, `TRIGGER`, `REFERENCES`). Una función nueva en `public` también recibe `EXECUTE` para todos: las de trigger y las `SECURITY DEFINER` necesitan `REVOKE EXECUTE ... FROM public, anon, authenticated, service_role` (Postgres solo exige `EXECUTE` al crear el trigger, no al dispararlo).
 - No conceder nada a `anon` salvo que la tabla deba ser pública.
 - `service_role` hoy no tiene permisos; concedérselos solo cuando exista un cliente que lo use.
 - Las funciones `SECURITY DEFINER` necesitan además `REVOKE EXECUTE ... FROM public, anon` (el `EXECUTE` por defecto es de `public`) y, si las llaman políticas, `GRANT USAGE` sobre el esquema y `GRANT EXECUTE` para `authenticated`.

@@ -98,7 +98,8 @@ restoDev/
 │   │   │   ├── auth/
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── login.service.ts
-│   │   │   │   └── logout.service.ts
+│   │   │   │   ├── logout.service.ts
+│   │   │   │   └── setUserBanned.service.ts
 │   │   │   └── categories/
 │   │   │       ├── createCategory.service.ts
 │   │   │       ├── deleteCategory.service.ts
@@ -127,6 +128,7 @@ restoDev/
 │   │   │   ├── requirePagePermission.ts
 │   │   │   └── requirePermission.ts
 │   │   ├── supabase/
+│   │   │   ├── admin.ts
 │   │   │   ├── client.ts
 │   │   │   ├── middleware.ts
 │   │   │   └── server.ts
@@ -154,7 +156,10 @@ restoDev/
 │   │   ├── 20261122002343_audit_trigger_categories.sql
 │   │   ├── 20261122010840_roles_is_system_guard.sql
 │   │   ├── 20261122011235_access_anti_escalation.sql
-│   │   └── 20261122011641_last_admin_guard.sql
+│   │   ├── 20261122011641_last_admin_guard.sql
+│   │   ├── 20261122014844_create_get_current_access_context.sql
+│   │   ├── 20261122065300_revoke_table_privileges_review.sql
+│   │   └── 20261122065400_revoke_trigger_functions_execute.sql
 │   ├── .gitignore
 │   └── config.toml
 ├── .env.example
