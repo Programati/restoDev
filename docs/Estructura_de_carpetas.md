@@ -78,6 +78,7 @@ restoDev/
 │   │   └── page.tsx
 │   ├── components/
 │   │   └── layout/
+│   │       ├── access-denied.tsx
 │   │       ├── public-header.tsx
 │   │       ├── site-footer.tsx
 │   │       └── site-header.tsx
@@ -122,6 +123,9 @@ restoDev/
 │   │       └── components/
 │   │           └── category-form.tsx
 │   ├── lib/
+│   │   ├── auth/
+│   │   │   ├── requirePagePermission.ts
+│   │   │   └── requirePermission.ts
 │   │   ├── supabase/
 │   │   │   ├── client.ts
 │   │   │   ├── middleware.ts
@@ -139,7 +143,11 @@ restoDev/
 │   │   ├── 20261121134100_create_access_tables.sql
 │   │   ├── 20261121134108_create_authorization_functions.sql
 │   │   ├── 20261121134118_seed_roles_permissions.sql
-│   │   └── 20261121135023_create_access_read_policies.sql
+│   │   ├── 20261121135023_create_access_read_policies.sql
+│   │   ├── 20261121185228_create_has_permission_bridge.sql
+│   │   ├── 20261121190157_categories_permission_policies.sql
+│   │   ├── 20261121190510_drop_categories_provisional_policy.sql
+│   │   └── 20261121190825_categories_updated_by_on_delete_set_null.sql
 │   ├── .gitignore
 │   └── config.toml
 ├── .env.example

@@ -24,12 +24,12 @@
 - `slug`: único entre **todos** los registros, incluidos los dados de baja; debe cumplir `CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$')`.
 - `icon_name`: longitud de 1 a 50 caracteres cuando no es nulo.
 - `display_order`: `CHECK (display_order >= 0)`.
-- `updated_by`: clave foránea a `auth.users(id)`.
+- `updated_by`: clave foránea a `auth.users(id)` con `ON DELETE SET NULL` (migración `categories_updated_by_on_delete_set_null`): borrar a un usuario no queda bloqueado por las categorías que modificó.
 
 ## Relaciones
 
 - `products`: una categoría puede tener varios productos. La baja lógica de una categoría no borra ni modifica sus productos.
-- `auth.users`: `updated_by` identifica al usuario que realizó la última modificación.
+- `auth.users`: `updated_by` identifica al usuario que realizó la última modificación; queda en `null` si se borra ese usuario.
 - `audit_logs`: los cambios en la categoría deben registrarse en la auditoría cuando se implemente su mecanismo.
 
 ## Reglas de negocio
@@ -44,17 +44,18 @@
 
 ## Seguridad
 
-- Habilitar **Row Level Security (RLS)** desde la creación de la tabla.
-- No conceder permisos de escritura indiscriminados mediante una política `TO authenticated`.
-- Definir políticas explícitas de lectura y gestión según los roles y permisos cuando se implemente ese modelo. Hasta entonces, mantener denegadas las operaciones no autorizadas.
+- **RLS:** habilitada desde la creación de la tabla.
+- **Lectura** (`categories_select_by_permission`): `categories.manage` ve todas las categorías, incluidas las dadas de baja; `categories.read` ve solo las vigentes (`deleted_at is null`).
+- **Inserción** (`categories_insert_by_permission`): `categories.manage`.
+- **Actualización y baja lógica** (`categories_update_by_permission`): `categories.manage`, en `using` y `with check`. La baja lógica es un `UPDATE` de `deleted_at`.
+- **Borrado físico:** sin política y sin `GRANT` de `DELETE`: la única eliminación permitida es la baja lógica.
+- **GRANT:** `select`, `insert` y `update` a `authenticated`; nada para `anon`.
+- Las políticas verifican permisos (`(select private.has_permission('...'))`), no nombres de rol, así que crear roles nuevos no las toca. Solo ejerce un permiso un perfil `active` con un rol activo.
+- Quien puede escribir también puede leer todo (`categories.manage`): `resolveCategorySlug` necesita ver los slugs de las categorías dadas de baja.
+- Cuando RLS bloquea un `SELECT` o un `UPDATE`, la base devuelve 0 filas y no un error. Por eso cada Action comprueba el permiso antes (`requirePermission`) para responder `FORBIDDEN`; RLS es la red de seguridad.
 - La baja lógica debe pasar por un mecanismo que valide en la base de datos la ausencia de productos activos asociados, sin depender únicamente de la interfaz.
-- Conceder `SELECT`, `INSERT` y `UPDATE` a `authenticated` en la migración de la tabla. Sin `DELETE`: la única eliminación permitida es la baja lógica. RLS sin `GRANT` bloquea todo (ver `docs/database/supabase-cli.md`).
 
-> **Estado actual (provisorio):** mientras no exista el modelo de roles, la tabla tiene una
-> política RLS `TO authenticated` de lectura y escritura. Contradice la regla anterior y se
-> reemplaza por políticas que exijan rol `admin` (función `is_admin()`) al definir los roles.
-> Hasta entonces, la verificación de rol queda como `TODO(roles)` en las Actions. La baja
-> lógica tampoco valida en la base la ausencia de productos activos: se resuelve al crear `products`.
+> **Estado actual:** la política provisoria `categories_provisional_authenticated_all` se eliminó (migración `drop_categories_provisional_policy`). Pendiente: la baja lógica todavía no valida en la base la ausencia de productos activos; se resuelve al crear `products`.
 
 ## Validaciones
 
@@ -66,3 +67,5 @@
 - Comprobar que la baja lógica conserva los productos y las referencias históricas.
 - Verificar que RLS esté habilitado desde el inicio y bloquee accesos no autorizados.
 - Verificar la actualización de `updated_at`, la referencia `updated_by` y el registro de auditoría.
+- Verificar la matriz de acceso por permiso (`Plan_identidad_y_permisos.md`, sección 7): sin rol, solo `categories.read`, `categories.manage`, perfil inactivo y rol inactivo; una escritura directa a la Data API sin permiso no tiene efecto.
+- Borrar un usuario que modificó categorías deja `updated_by` en `null` y no lo bloquea.

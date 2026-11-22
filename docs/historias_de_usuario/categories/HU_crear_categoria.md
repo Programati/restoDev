@@ -1,6 +1,6 @@
 # HU-CAT-001 — Crear categoría
 
-> Estado: Implementada (Server Action). Pendientes: rol `admin`, Route Handler y auditoría
+> Estado: Implementada (Server Action). Pendientes: Route Handler y auditoría
 > (ver "Alcance actual y pendientes").
 
 ## Historia
@@ -41,6 +41,8 @@ Como **administrador**, quiero **crear una categoría**, para **organizar los pr
     negativo, de modo que una escritura que no pase por la Action no pueda dejar datos inválidos.
 13. Si la solicitud incluye `slug`, `deleted_at`, `updated_by`, `id` o fechas, esos valores se
     ignoran.
+14. Dada una persona con sesión pero sin el permiso `categories.manage`, cuando intenta
+    crear una categoría, se rechaza con `FORBIDDEN` y no se crea nada.
 
 ## Fuera de alcance
 
@@ -51,13 +53,12 @@ Como **administrador**, quiero **crear una categoría**, para **organizar los pr
 
 ## Alcance actual y pendientes
 
-- **Permiso actual:** cualquier usuario autenticado. La política RLS de `categories` también es
-  provisoria (lectura y escritura para cualquier usuario autenticado).
-- **Permiso previsto:** rol `admin`, cuando se defina e implemente el modelo de roles
-  (`TODO(roles)`).
-- **Implementado:** Server Action, schema Zod, Servicio, migraciones y formulario.
-- **Pendiente:** exigir el rol `admin`; el endpoint `POST /api/categories` (objetivo futuro, todavía
-  no existe); el registro en `audit_logs`, hasta implementar el mecanismo de auditoría.
+- **Permiso:** `categories.manage`. La Action lo comprueba antes de validar (`FORBIDDEN`) y RLS lo
+  refuerza (política `categories_insert_by_permission`).
+- **Implementado:** Server Action con verificación de permiso, schema Zod, Servicio, migraciones y
+  formulario.
+- **Pendiente:** el endpoint `POST /api/categories` (objetivo futuro, todavía no existe); el
+  registro en `audit_logs`, hasta implementar el mecanismo de auditoría (Fase 4).
 
 ## Decisiones pendientes
 
@@ -72,6 +73,10 @@ Como **administrador**, quiero **crear una categoría**, para **organizar los pr
 - Modelo de datos: [`Model_category`](../../database/model/Model_category.md).
 
 ## Verificación
+
+> **Pruebas diferidas hasta tener el Front (decisión del 2026-11-21).** Se ejecutan junto con la
+> matriz de la sección 7 de [`Plan_identidad_y_permisos`](../../Plan_identidad_y_permisos.md) (tarea
+> F3.8). Hasta entonces todas las filas quedan en "Pendiente".
 
 Las pruebas manuales reportadas no registran los casos individuales; hasta registrarlos, quedan
 pendientes.
@@ -91,3 +96,4 @@ pendientes.
 | 11       |                  | Pendiente |       |
 | 12       |                  | Pendiente |       |
 | 13       |                  | Pendiente |       |
+| 14       |                  | Pendiente |       |

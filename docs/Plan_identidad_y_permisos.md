@@ -13,15 +13,15 @@
 
 ## 1. Estado general
 
-| Fase | Contenido                                           | Rama sugerida                    | Depende de | Estado                                                  |
-| ---- | --------------------------------------------------- | -------------------------------- | ---------- | ------------------------------------------------------- |
-| P    | Cerrar `deleteCategory` y sincronizar documentación | `feature/daleteCategory`         | —          | Completada (verificación de HU-CAT-005 diferida a F3.8) |
-| F0   | Decisiones y modelos documentados (sin código)      | `docs/identity-access-design`    | P          | Completada (PR mergeado)                                |
-| F1   | Base de identidad: `profiles`                       | `feature/identity-profiles`      | F0         | Completada (PR mergeado)                                |
-| F2   | Roles, permisos y funciones de autorización         | `feature/roles-permissions`      | F1         | Implementada y verificada en la base; falta el PR       |
-| F3   | Migrar `categories` a permisos                      | `feature/categories-permissions` | F2         | Pendiente (empezar por D12)                             |
-| F4   | Auditoría (`audit_logs` + triggers)                 | `feature/audit-logs`             | F3         | Pendiente                                               |
-| F5   | Protecciones, RPC administrativas y cierre          | `feature/access-hardening`       | F4         | Pendiente                                               |
+| Fase | Contenido                                           | Rama sugerida                    | Depende de | Estado                                                                                         |
+| ---- | --------------------------------------------------- | -------------------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
+| P    | Cerrar `deleteCategory` y sincronizar documentación | `feature/daleteCategory`         | —          | Completada (verificación de HU-CAT-005 diferida a F3.8, y esta al Front)                       |
+| F0   | Decisiones y modelos documentados (sin código)      | `docs/identity-access-design`    | P          | Completada (PR mergeado)                                                                       |
+| F1   | Base de identidad: `profiles`                       | `feature/identity-profiles`      | F0         | Completada (PR mergeado)                                                                       |
+| F2   | Roles, permisos y funciones de autorización         | `feature/roles-permissions`      | F1         | Implementada y verificada en la base; falta el PR                                              |
+| F3   | Migrar `categories` a permisos                      | `feature/categories-permissions` | F2         | Implementada y verificada (F3.1 a F3.7); F3.8: documentación hecha, pruebas diferidas al Front |
+| F4   | Auditoría (`audit_logs` + triggers)                 | `feature/audit-logs`             | F3         | Pendiente                                                                                      |
+| F5   | Protecciones, RPC administrativas y cierre          | `feature/access-hardening`       | F4         | Pendiente                                                                                      |
 
 Una fase = una rama = un PR hacia `develop` (squash), con `pnpm run check:full` en verde. Las migraciones viajan en el mismo PR que el código que las usa y los tipos se regeneran en ese PR (`Git_workflow.md`, sección 8).
 
@@ -90,7 +90,7 @@ D1 a D11 se confirmaron el 2026-11-20 (Fase 0). Los 6 `Model_*.md`, el DER, `Reg
 - [x] **D9. Auditoría: retención y datos sensibles.** Sin purga por ahora (volumen bajo); se revisa antes de auditar tablas con más movimiento, como `orders`. Hoy no hay campos sensibles en las tablas auditadas; el trigger debe poder excluir columnas por tabla si aparece alguno.
 - [x] **D10. Aprobación del DER.** Título corregido (6 tablas propias más `auth.users`), `actor_id` alineado con D3 y marcado como aprobado.
 - [x] **D11. Autorización en las Actions.** Un helper único (por ejemplo `src/lib/auth/requirePermission.ts`) que use `private.has_permission` vía RPC o `get_current_access_context()`, devuelva `FORBIDDEN` y se invoque en cada Action antes de validar con Zod. Un solo lugar para el cambio. (La parte "vía RPC" no es posible tal cual: ver D12.)
-- [ ] **D12. Cómo consulta permisos el helper de D11 (abierta; resolver al inicio de F3).** Detectada en F2: `private` no está expuesto en la API, así que `supabase.rpc("has_permission")` no llega a `private.has_permission`. Opciones: (a) función puente `public.has_permission(p_code text)` que delega en la de `private`, con `REVOKE EXECUTE` a `public` y `anon` y `GRANT` a `authenticated`; (b) adelantar `get_current_access_context()` de F5.6 (usuario, roles y permisos en una llamada) y que el helper lea de ahí. La (a) es la más chica y alcanza para F3; la (b) evita una llamada por permiso y sirve también para la interfaz. Se decide y se agrega la migración como primer paso de F3.
+- [x] **D12. Cómo consulta permisos el helper de D11 (resuelta en F3.1b).** Detectada en F2: `private` no está expuesto en la API, así que `supabase.rpc("has_permission")` no llega a `private.has_permission`. Opciones: (a) función puente `public.has_permission(p_code text)` que delega en la de `private`, con `REVOKE EXECUTE` a `public` y `anon` y `GRANT` a `authenticated`; (b) adelantar `get_current_access_context()` de F5.6 (usuario, roles y permisos en una llamada) y que el helper lea de ahí. La (a) es la más chica y alcanza para F3; la (b) evita una llamada por permiso y sirve también para la interfaz. **Resuelta con la opción (a):** `public.has_permission(p_code text)` (`SECURITY INVOKER`, `search_path` vacío, `EXECUTE` revocado a `public` y `anon` y concedido a `authenticated`), que delega en `private.has_permission`; `requirePermission` la llama con `supabase.rpc()`. `get_current_access_context()` sigue prevista en F5.6.
 
 ### Tareas de la Fase 0
 
@@ -111,7 +111,7 @@ D1 a D11 se confirmaron el 2026-11-20 (Fase 0). Los 6 `Model_*.md`, el DER, `Reg
 La implementación de `deleteCategory` ya está mergeada en `develop` y la documentación está al día.
 
 - [x] P.1 Pasar `check:full` en la rama actual y abrir el PR hacia `develop`.
-- [x] P.2 Sincronizar `PROGRESO.md` (estado real de `deleteCategory`), `Estructura_de_carpetas.md` (agregados `deleteCategory.action.ts`, `.schema.ts`, `.service.ts` y `Contract_deleteCategory.md`) y el estado de HU-CAT-005. **La tabla de verificación de HU-CAT-005 se completa en F3.8**, cuando haya permisos reales, para probar todo junto.
+- [x] P.2 Sincronizar `PROGRESO.md` (estado real de `deleteCategory`), `Estructura_de_carpetas.md` (agregados `deleteCategory.action.ts`, `.schema.ts`, `.service.ts` y `Contract_deleteCategory.md`) y el estado de HU-CAT-005. **La tabla de verificación de HU-CAT-005 se completa en F3.8**, cuando haya permisos reales, para probar todo junto (F3.8 la difiere hasta tener el Front).
 - [x] P.3 Mergear en `develop` y crear la rama de la Fase 0 desde ahí (la rama con el typo `daleteCategory` se borra al mergear).
 - **Impacto en `categories`:** cierra la operación de baja con permiso provisorio, tal como está documentada.
 
@@ -152,23 +152,23 @@ Migraciones: `create_access_tables` (F2.2), `create_authorization_functions` (F2
 
 Es una migración de alteración, no de recreación. Orden obligatorio:
 
-- [ ] F3.1 Rama `feature/categories-permissions`.
-- [ ] F3.1b Resolver D12: migración con la función puente en `public` (o `get_current_access_context()`), con `REVOKE EXECUTE` a `public` y `anon` y `GRANT` a `authenticated`; probar que un usuario con y sin permiso recibe `true`/`false` vía `supabase.rpc()`.
-- [ ] F3.2 Migración A, **solo agrega**: tres políticas nuevas sobre `categories`.
+- [x] F3.1 Rama `feature/categories-permissions`.
+- [x] F3.1b Resolver D12: migración con la función puente en `public` (o `get_current_access_context()`), con `REVOKE EXECUTE` a `public` y `anon` y `GRANT` a `authenticated`; probar que un usuario con y sin permiso recibe `true`/`false` vía `supabase.rpc()`.
+- [x] F3.2 Migración A, **solo agrega**: tres políticas nuevas sobre `categories`.
   - Lectura: `categories.manage`, o `deleted_at is null` con `categories.read`.
   - Alta: `with check` con `categories.manage`.
   - Modificación: `using` y `with check` con `categories.manage`.
   - Sin política de `DELETE` (y sin `GRANT` de `DELETE`).
-- [ ] F3.3 Probar con el admin y con un usuario sin permisos (sección 7) mientras la provisoria sigue activa. Ojo: las políticas permisivas se combinan con `OR`, así que la prueba real de denegación solo es válida **después** del paso siguiente.
-- [ ] F3.4 Migración B: `drop policy categories_provisional_authenticated_all`. Repetir la matriz completa.
-- [ ] F3.5 Migración C (D3): `updated_by` con `ON DELETE SET NULL`. Verificar que borrar un usuario de prueba ya no queda bloqueado.
-- [ ] F3.6 Crear el helper de D11 y reemplazar los 5 `TODO(roles)`:
+- [x] F3.3 Probar con el admin y con un usuario sin permisos (sección 7) mientras la provisoria sigue activa. Ojo: las políticas permisivas se combinan con `OR`, así que la prueba real de denegación solo es válida **después** del paso siguiente.
+- [x] F3.4 Migración B: `drop policy categories_provisional_authenticated_all`. Repetir la matriz completa.
+- [x] F3.5 Migración C (D3): `updated_by` con `ON DELETE SET NULL`. Verificar que borrar un usuario de prueba ya no queda bloqueado.
+- [x] F3.6 Crear el helper de D11 y reemplazar los 5 `TODO(roles)`:
   - `createCategoryAction`, `updateCategoryAction`, `deleteCategoryAction`: exigen `categories.manage`.
   - `getCategoryAction`, `listCategoriesAction`: exigen `categories.read`, y `categories.manage` si `include_deleted` es `true`.
   - El permiso se comprueba **antes** de validar con Zod y devuelve `FORBIDDEN` con los mensajes ya documentados.
-- [ ] F3.7 `/admin`: mostrar el nombre del perfil en lugar de "Hola ADMINISTRADOR" y exigir `admin.access` en el layout o la página (no en el proxy).
-- [ ] F3.8 Documentación: `Model_category.md` (Seguridad y bloque provisorio), los 5 `Contract_*Category.md`, `Contract_categories.md`, las 5 HU (`Permiso actual` y `Pendiente`) y `PROGRESO.md` (cerrar las decisiones abiertas de roles, RLS provisoria y `/admin`). **Incluye completar la tabla de verificación de HU-CAT-005** (diferida desde P.2), probando sus criterios junto con la matriz de la sección 7; el criterio 9 sigue pendiente hasta que exista `products`.
-- **Verificación:** la matriz de la sección 7 completa para las 5 operaciones, vía Action y vía `GET /api/categories`; escrituras directas a la Data API sin permiso fallan; `check:full`.
+- [x] F3.7 `/admin`: mostrar el nombre del perfil en lugar de "Hola ADMINISTRADOR" y exigir `admin.access` en el layout o la página (no en el proxy).
+- [ ] F3.8 Documentación: `Model_category.md` (Seguridad y bloque provisorio), los 5 `Contract_*Category.md`, `Contract_categories.md`, las 5 HU (`Permiso actual` y `Pendiente`) y `PROGRESO.md` (cerrar las decisiones abiertas de roles, RLS provisoria y `/admin`). **Incluye completar la tabla de verificación de HU-CAT-005** (diferida desde P.2), probando sus criterios junto con la matriz de la sección 7; el criterio 9 sigue pendiente hasta que exista `products`. **Estado:** documentación sincronizada. **Las pruebas de la matriz de la sección 7 y las tablas de verificación de las 5 HU quedan diferidas hasta tener el Front** (decisión del 2026-11-21: todavía no hay pantallas ni Route Handlers para ejercitar las Actions). Esa parte de F3.8 queda abierta; el PR de la fase puede abrirse sin ella, dejando el diferimiento anotado en el PR.
+- **Verificación:** la matriz de la sección 7 completa para las 5 operaciones, vía Action y vía `GET /api/categories`; escrituras directas a la Data API sin permiso fallan; `check:full`. **Diferida hasta tener el Front** (ver F3.8). Lo verificado en F3.1 a F3.7 con SQL y con el usuario admin se mantiene como está.
 - **Impacto en `categories`:** es la fase donde cambia: política, FK, Actions, front y documentación.
 
 ### Fase 4. Auditoría
@@ -200,6 +200,8 @@ Es una migración de alteración, no de recreación. Orden obligatorio:
 
 Se ejecuta en F2 (funciones), F3 (categories) y F5 (todas las tablas). Se anota el resultado en la tabla de verificación de cada HU y en el PR.
 
+> **Estado (2026-11-21):** la ejecución completa de esta matriz sobre `categories` vía Actions y vía `GET /api/categories` queda **diferida hasta tener el Front** (tarea F3.8). Hasta entonces, las tablas de verificación de las HU quedan en "Pendiente". Al retomarla, registrar cada resultado en las HU y en el PR.
+
 | Usuario de prueba                           | Leer categorías | Leer categorías de baja | Crear / modificar / dar de baja | `/admin`             |
 | ------------------------------------------- | --------------- | ----------------------- | ------------------------------- | -------------------- |
 | Sin sesión                                  | `UNAUTHORIZED`  | `UNAUTHORIZED`          | `UNAUTHORIZED`                  | Redirige a `/login`  |
@@ -226,17 +228,19 @@ Además, para cada tabla expuesta: intentar escribir **sin pasar por la Action**
 - **T9. `cacheComponents`** conserva el estado de páginas ya visitadas: si `/admin` pasa a depender del perfil, evitar `new Date()` en Server Components y revisar que no muestre datos de una sesión anterior tras cerrar sesión.
 - **T10. Redirigir `gen types` directo al archivo lo vacía si el comando falla.** `supabase gen types typescript --linked` falla con "Cannot find project ref". Usar `--project-id` y un archivo temporal (`> /tmp/db.types.ts && mv ...`). Recuperación: `git checkout -- src/core/types/database.types.ts`.
 - **T11. Las funciones de `private` no se pueden llamar con `supabase.rpc()`.** El esquema no está expuesto (a propósito). Las Actions necesitan una función puente en `public` (D12). Las políticas RLS sí pueden llamar a `private.*` porque se evalúan dentro de la base.
-- **T12. Un usuario de Auth creado en el panel recibe perfil `active` y ningún rol.** Con el registro público desactivado (D7) solo se crean usuarios desde el panel o la API de administración, pero mientras `categories` tenga la política provisoria, ese usuario puede leer y escribir categorías. Se corrige en F3.4.
+- **T12. Un usuario de Auth creado en el panel recibe perfil `active` y ningún rol.** Con el registro público desactivado (D7) solo se crean usuarios desde el panel o la API de administración, pero mientras `categories` tenga la política provisoria, ese usuario puede leer y escribir categorías. Corregido en F3.4: sin roles no tiene permisos sobre `categories`.
 
 ## 9. Registro de cambios
 
-| Fecha      | Cambio                                                                                                                                                                                               |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-20 | Archivo creado con el plan por fases, decisiones y matriz de pruebas                                                                                                                                 |
-| 2026-11-20 | F0: confirmadas D1, D3, D5 y D9; escritos los 6 modelos (F0.2) y `Reglas_de_negocio.md` (F0.4)                                                                                                       |
-| 2026-11-20 | F0: confirmadas D2, D4, D6, D7, D8, D10 y D11; DER corregido (F0.3), convenciones y stack (F0.5) y `PROGRESO.md` (F0.6) actualizados. `deleteCategory` mergeada                                      |
-| 2026-11-21 | Fase P completada: documentación de `deleteCategory` sincronizada (P.2). La tabla de verificación de HU-CAT-005 se difiere a F3.8                                                                    |
-| 2026-11-21 | F0 completada: PR de documentación mergeado en `develop` (F0.7)                                                                                                                                      |
-| 2026-11-21 | F1 completada: migraciones `create_profiles` y `backfill_profiles` aplicadas, verificadas y mergeadas; D7 resuelta (marca `invited` en `raw_app_meta_data`); trampa T10                              |
-| 2026-11-21 | F2 implementada y verificada en la base (tablas, funciones `private`, seed, primer admin y políticas de lectura); `supabase-cli.md` actualizada; agregadas D12 (abierta), T11 y T12 y la tarea F3.1b |
-| 2026-11-21 | Registro público de Auth desactivado en el proyecto de pruebas (cierra el pendiente de D7)                                                                                                           |
+| Fecha      | Cambio                                                                                                                                                                                                   |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-20 | Archivo creado con el plan por fases, decisiones y matriz de pruebas                                                                                                                                     |
+| 2026-11-20 | F0: confirmadas D1, D3, D5 y D9; escritos los 6 modelos (F0.2) y `Reglas_de_negocio.md` (F0.4)                                                                                                           |
+| 2026-11-20 | F0: confirmadas D2, D4, D6, D7, D8, D10 y D11; DER corregido (F0.3), convenciones y stack (F0.5) y `PROGRESO.md` (F0.6) actualizados. `deleteCategory` mergeada                                          |
+| 2026-11-21 | Fase P completada: documentación de `deleteCategory` sincronizada (P.2). La tabla de verificación de HU-CAT-005 se difiere a F3.8                                                                        |
+| 2026-11-21 | F0 completada: PR de documentación mergeado en `develop` (F0.7)                                                                                                                                          |
+| 2026-11-21 | F1 completada: migraciones `create_profiles` y `backfill_profiles` aplicadas, verificadas y mergeadas; D7 resuelta (marca `invited` en `raw_app_meta_data`); trampa T10                                  |
+| 2026-11-21 | F2 implementada y verificada en la base (tablas, funciones `private`, seed, primer admin y políticas de lectura); `supabase-cli.md` actualizada; agregadas D12 (abierta), T11 y T12 y la tarea F3.1b     |
+| 2026-11-21 | Registro público de Auth desactivado en el proyecto de pruebas (cierra el pendiente de D7)                                                                                                               |
+| 2026-11-21 | F3 implementada y verificada hasta F3.7 (D12 resuelta con la función puente; `/admin` con `admin.access` y `requirePagePermission`); F3.8: documentación sincronizada, tablas de verificación pendientes |
+| 2026-11-21 | F3.8: las pruebas de la matriz (sección 7) y las tablas de verificación de las 5 HU se difieren hasta tener el Front; la fase queda lista para abrir su PR con ese diferimiento anotado                  |

@@ -7,6 +7,7 @@ import { getCategory } from "@/core/services/categories"
 import { ServiceError } from "@/lib/errors"
 import type { ActionResult } from "@/core/types/action-result"
 import type { CategoryDetail } from "@/core/types/categories/category.types"
+import { requirePermission } from "@/lib/auth/requirePermission"
 
 export async function getCategoryAction(input: unknown): Promise<ActionResult<CategoryDetail>> {
   const supabase = await createClient()
@@ -18,8 +19,13 @@ export async function getCategoryAction(input: unknown): Promise<ActionResult<Ca
     return { ok: false, error: { code: "UNAUTHORIZED", message: "Sesión requerida" } }
   }
 
-  // TODO(roles): definir qué roles pueden ver una categoría y exigir rol admin cuando
-  // `include_deleted` sea true, cuando exista el modelo de roles
+  // Permiso (antes de validar)
+  const denied = await requirePermission(
+    supabase,
+    ["categories.read", "categories.manage"],
+    "No tenés permiso para ver categorías",
+  )
+  if (denied) return denied
 
   const parsed = getCategorySchema.safeParse(input ?? {})
   if (!parsed.success) {
@@ -31,6 +37,15 @@ export async function getCategoryAction(input: unknown): Promise<ActionResult<Ca
         fieldErrors: z.flattenError(parsed.error).fieldErrors,
       },
     }
+  }
+
+  if (parsed.data.include_deleted) {
+    const deniedDeleted = await requirePermission(
+      supabase,
+      ["categories.manage"],
+      "No tenés permiso para ver categorías",
+    )
+    if (deniedDeleted) return deniedDeleted
   }
 
   try {

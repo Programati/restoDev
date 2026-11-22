@@ -5,7 +5,7 @@
 | Action          | `src/actions/categories/updateCategory.action.ts` (exporta `updateCategoryAction`) |
 | Schema          | `src/core/schemas/categories/updateCategory.schema.ts`                             |
 | Servicio        | `src/core/services/categories/updateCategory.service.ts`                           |
-| Permiso         | Actual: cualquier usuario con sesión. Pendiente: exigir rol `admin`                |
+| Permiso         | Sesión activa y permiso `categories.manage`                                        |
 | Equivalente API | Planificado: `PATCH /api/categories/:id → 200` (Route Handler aún no implementado) |
 
 La función exportada es `updateCategoryAction`. Los códigos HTTP de esta ficha describen el Route
@@ -97,14 +97,14 @@ Campos que **no** se reciben: `slug` (se regenera a partir de `name`; el cliente
 
 ## Errores
 
-| code               | Cuándo                                                                                                                  | message                                    | HTTP (API) |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------- |
-| `VALIDATION_ERROR` | Falla el schema (`id` inválido, nombre fuera de rango, `display_order` negativo o no entero) o no se envía ningún campo | Datos inválidos / Enviá al menos un campo  | 400        |
-| `UNAUTHORIZED`     | Sin sesión                                                                                                              | Sesión requerida                           | 401        |
-| `FORBIDDEN`        | La BD rechaza la lectura o escritura por RLS o permisos (`42501`). Al implementar roles, también si no es `admin`       | No tenés permiso para modificar categorías | 403        |
-| `NOT_FOUND`        | No existe una categoría con ese `id`                                                                                    | Categoría no encontrada                    | 404        |
-| `CONFLICT`         | El `name` ya lo usa **otra** categoría (incluso una dada de baja)                                                       | Ya existe una categoría con ese nombre     | 409        |
-| `INTERNAL_ERROR`   | Falla inesperada, o no se logró fijar el `slug` tras reintentar                                                         | Error inesperado. Intentá de nuevo         | 500        |
+| code               | Cuándo                                                                                                                               | message                                    | HTTP (API) |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ | ---------- |
+| `VALIDATION_ERROR` | Falla el schema (`id` inválido, nombre fuera de rango, `display_order` negativo o no entero) o no se envía ningún campo              | Datos inválidos / Enviá al menos un campo  | 400        |
+| `UNAUTHORIZED`     | Sin sesión                                                                                                                           | Sesión requerida                           | 401        |
+| `FORBIDDEN`        | El usuario no tiene `categories.manage` (lo comprueba la Action) o la BD rechaza la lectura o escritura por RLS o permisos (`42501`) | No tenés permiso para modificar categorías | 403        |
+| `NOT_FOUND`        | No existe una categoría con ese `id`                                                                                                 | Categoría no encontrada                    | 404        |
+| `CONFLICT`         | El `name` ya lo usa **otra** categoría (incluso una dada de baja)                                                                    | Ya existe una categoría con ese nombre     | 409        |
+| `INTERNAL_ERROR`   | Falla inesperada, o no se logró fijar el `slug` tras reintentar                                                                      | Error inesperado. Intentá de nuevo         | 500        |
 
 Cuando falla la regla del conjunto, `fieldErrors` queda vacío y `message` trae el motivo
 (`Enviá al menos un campo para modificar`). Una colisión de `slug` nunca produce `CONFLICT`: se
@@ -146,11 +146,12 @@ resuelve con sufijo numérico.
 - No se detecta "sin cambios": si los valores enviados son iguales a los actuales, la fila igual se actualiza y se refresca `updated_at`.
 - Concurrencia: gana la última escritura. No hay control de versión optimista.
 - La Action valida con Zod y la base replica las reglas con constraints `CHECK` (`categories_name_length`, `categories_icon_name_length`, `categories_slug_length`, `categories_slug_format`, `categories_display_order_check`), de modo que una escritura que no pase por la Action también queda protegida.
-- RLS está habilitado y el `GRANT` incluye `UPDATE` para `authenticated`. **Actual:** la política provisoria permite acceso a cualquier usuario autenticado. **Pendiente:** exigir rol `admin` (`TODO(roles)` en la Action), considerando que modificar categorías dadas de baja podría requerirlo.
-- Si RLS oculta la fila, el `UPDATE` no afecta filas y el resultado es `NOT_FOUND`; si falta el `GRANT`, es `FORBIDDEN` (`42501`).
+- **Permiso:** la Action comprueba la sesión y, antes de validar con Zod, `categories.manage` con `requirePermission` (`FORBIDDEN` si falta); el mismo permiso aplica a las categorías dadas de baja. RLS lo refuerza (`categories_update_by_permission`; `GRANT` de `UPDATE` para `authenticated`).
+- Si RLS oculta la fila, el `UPDATE` no afecta filas y el resultado es `NOT_FOUND`; si falta el `GRANT`, es `FORBIDDEN` (`42501`). Como la Action comprueba el permiso antes, un usuario sin `categories.manage` recibe `FORBIDDEN`; el resultado que produciría RLS al ocultar o bloquear la fila queda como red de seguridad ante una escritura directa.
 
 ## Validación por capa
 
+- **Action (antes de Zod):** sesión (`UNAUTHORIZED`) y permiso `categories.manage` (`FORBIDDEN`) con `requirePermission`.
 - **Zod en la Action:** UUID del `id`, tipo/longitud/recorte de `name` e `icon_name`, entero no negativo para `display_order`, booleano para `active` y al menos un campo a modificar.
 - **Servicio:** generación del `slug` y resolución de colisiones excluyendo la propia fila, `updated_by`, reintento ante carrera, traducción de `23505`, `42501` y fila no encontrada.
 - **Base de datos:** unicidad de `name` y `slug`, formato y longitudes, `display_order >= 0`. No requiere migración nueva.
@@ -173,6 +174,9 @@ sequenceDiagram
   Action->>Supabase: auth.getUser()
   Supabase-->>Action: sesión | null
   Action-->>Front: UNAUTHORIZED (si no hay sesión)
+  Action->>Supabase: rpc has_permission (categories.manage)
+  Supabase-->>Action: true | false
+  Action-->>Front: FORBIDDEN (si falta el permiso)
   Action->>Zod: validar input ?? {}
   Zod-->>Front: VALIDATION_ERROR (si falla o no hay campos a modificar)
   Action->>Service: updateCategory(supabase, dto, userId)
@@ -189,6 +193,6 @@ sequenceDiagram
 
 ## Estado de implementación
 
-- **Implementado:** Action, schema Zod, Servicio y tipos (`UpdateCategoryInput`, `UpdateCategoryDto`).
-- **Pendiente:** exigir rol `admin`, Route Handler `PATCH /api/categories/:id` y auditoría.
+- **Implementado:** Action (con verificación de permiso), schema Zod, Servicio y tipos (`UpdateCategoryInput`, `UpdateCategoryDto`).
+- **Pendiente:** Route Handler `PATCH /api/categories/:id` y auditoría.
 - **A confirmar:** qué hacer al desactivar (`active: false`) una categoría con productos activos cuando exista `products`.

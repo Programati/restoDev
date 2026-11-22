@@ -162,10 +162,10 @@ El archivo está en `.prettierignore`. Si el esquema cambió, el cambio de tipos
 
 ## 8. Configuración del proyecto Supabase
 
-| Dónde (panel)                                                     | Valor correcto                                        | Por qué                                                                                                                                                                              |
-| ----------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Settings → API → Exposed schemas                                  | `public` y `graphql_public`; **`private` sin marcar** | Las funciones de autorización (`private.has_permission`, etc.) no deben poder llamarse desde la API                                                                                  |
-| Authentication → Sign In / Providers → Allow new users to sign up | Desactivado                                           | Con el registro abierto, cualquiera crea una cuenta con perfil `active` (sin roles no tiene permisos, pero mientras `categories` tenga la política provisoria puede leer y escribir) |
+| Dónde (panel)                                                     | Valor correcto                                        | Por qué                                                                                                                                                                           |
+| ----------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Settings → API → Exposed schemas                                  | `public` y `graphql_public`; **`private` sin marcar** | Las funciones de autorización (`private.has_permission`, etc.) no deben poder llamarse desde la API; las Actions consultan permisos con la función puente `public.has_permission` |
+| Authentication → Sign In / Providers → Allow new users to sign up | Desactivado                                           | Con el registro abierto, cualquiera crea una cuenta con perfil `active` (sin roles no tiene permisos, pero conviene cerrarlo)                                                     |
 
 Revisar ambos en cada entorno nuevo.
 
