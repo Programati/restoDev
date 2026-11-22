@@ -140,5 +140,6 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** las protecciones de la base (`roles_protect_system`, `ON DELETE RESTRICT` y `CASCADE`) y los triggers de auditoría (F4); nada propio de la operación.
-- **Pendiente:** RPC `admin_delete_role`, schema, Servicio, Action, tipos y el botón en `/admin/roles`.
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_delete_role` (si es del sistema y además está asignado prevalece `23514`; asignado: `23503`; `42501` sin permiso, `P0002` inexistente, `23505`/`23514`/`23503` conflictos (el Servicio los traduce)).
+- **Pendiente:** schema, Servicio, Action, tipos y el botón en `/admin/roles`.
 - **A confirmar (HU-ROL-005):** el borrado físico frente a permitir solo desactivar, y qué mensaje prevalece si el rol es del sistema y además está asignado.

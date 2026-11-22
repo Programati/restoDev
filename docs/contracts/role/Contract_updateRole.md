@@ -148,4 +148,5 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** `roles_protect_system` (F5.3) y el trigger de auditoría (F4).
-- **Pendiente:** RPC `admin_update_role` (con la comprobación del último administrador), schema, Servicio, Action, tipos y el formulario de edición.
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_update_role` (parcial; `p_set_description` distingue omitido de `null`; incluye la comprobación del último administrador, `23514`; `42501` sin permiso, `P0002` inexistente, `23505`/`23514`/`23503` conflictos (el Servicio los traduce)).
+- **Pendiente:** schema, Servicio, Action, tipos y el formulario de edición.

@@ -171,4 +171,4 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** nada (documentación de la Fase 6). Existen `createAdminClient()` y `getServiceRoleKey()` (F5.2).
-- **Pendiente:** schema, Servicio, Action, tipos, RPC `admin_assign_role` y `admin_get_user`, y el formulario.
+- **Pendiente:** schema, Servicio, Action, tipos y el formulario. Las RPC `admin_assign_role` y `admin_get_user` ya están implementadas (F6.2, 2026-11-22).

@@ -139,4 +139,5 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** los triggers de protección (F5.4) y de auditoría (F4).
-- **Pendiente:** RPC `admin_assign_role`, schema, Servicio, Action, tipos y la pantalla.
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_assign_role` (idempotente; usuario o rol inexistente: `P0002`; autoasignación: `42501`).
+- **Pendiente:** schema, Servicio, Action, tipos y la pantalla.

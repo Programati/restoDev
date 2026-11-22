@@ -134,4 +134,5 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** los triggers de protección (F5.4 y F5.5) y de auditoría (F4).
-- **Pendiente:** RPC `admin_remove_role`, schema, Servicio, Action, tipos y la pantalla.
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_remove_role` (idempotente; usuario o rol inexistente: `P0002`; propio rol: `42501`; último administrador: `23514`).
+- **Pendiente:** schema, Servicio, Action, tipos y la pantalla.

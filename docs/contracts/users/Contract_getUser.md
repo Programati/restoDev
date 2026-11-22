@@ -118,4 +118,5 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** nada (documentación de la Fase 6).
-- **Pendiente:** RPC `admin_get_user`, schema, Servicio, Action, tipos y la pantalla de detalle.
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_get_user` (devuelve `jsonb` con la forma de `UserDetail`; usuario inexistente: error `P0002`, no fila vacía; `42501` sin permiso).
+- **Pendiente:** schema, Servicio, Action, tipos y la pantalla de detalle.

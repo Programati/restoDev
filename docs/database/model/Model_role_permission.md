@@ -1,6 +1,6 @@
 # role_permissions
 
-> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger anti-escalada está activo desde F5.4 (`access_anti_escalation`). Las RPC de escritura quedan pendientes hasta la pantalla de gestión (D13).
+> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger anti-escalada está activo desde F5.4 (`access_anti_escalation`). La RPC de escritura `admin_set_role_permissions` está implementada desde F6.2 (migración `create_admin_roles_rpc`, 2026-11-22).
 
 ## Estructura
 
@@ -40,8 +40,8 @@
 
 - **RLS:** habilitada desde la creación de la tabla.
 - **Lectura:** `roles.manage` (política `role_permissions_select_roles_manage`).
-- **Inserción, actualización y borrado:** sin `GRANT` directo; la RPC `admin_set_role_permissions` (con `roles.manage`) está **pendiente** hasta la pantalla de gestión (D13); mientras tanto, solo migración o SQL Editor. Es la tabla más sensible del dominio: define quién puede hacer qué.
-- **Anti-escalada (F5.4):** trigger `role_permissions_protect_assignments` (`BEFORE INSERT OR UPDATE OR DELETE`, función `private.protect_access_assignments`). Con `auth.uid()` exige `roles.manage` y bloquea modificar los permisos de un rol que el propio actor tiene asignado (autoasignación indirecta), con `42501`. Sin `auth.uid()` (migraciones, seed, SQL Editor, servidor) no controla nada. **Límite conocido (F5.5):** quitar `admin.access` de un rol no está cubierto por la guardia del último administrador.
+- **Inserción, actualización y borrado:** sin `GRANT` directo; la RPC `admin_set_role_permissions` (con `roles.manage`) está implementada desde F6.2 y es la vía de la app; además, migración o SQL Editor. Es la tabla más sensible del dominio: define quién puede hacer qué.
+- **Anti-escalada (F5.4):** trigger `role_permissions_protect_assignments` (`BEFORE INSERT OR UPDATE OR DELETE`, función `private.protect_access_assignments`). Con `auth.uid()` exige `roles.manage` y bloquea modificar los permisos de un rol que el propio actor tiene asignado (autoasignación indirecta), con `42501`. Sin `auth.uid()` (migraciones, seed, SQL Editor, servidor) no controla nada. **Límite conocido (F5.5):** quitar `admin.access` de un rol no está cubierto por la guardia del último administrador; lo cubre `admin_set_role_permissions` (F6.2).
 - **GRANT:** solo `select` a `authenticated`; nada para `anon`; sin Realtime.
 
 ## Validaciones

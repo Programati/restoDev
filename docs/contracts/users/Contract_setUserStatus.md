@@ -137,4 +137,5 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** `setUserBanned` (F5.2) y la guardia del último administrador (F5.5).
-- **Pendiente:** RPC `admin_update_profile_status`, schema, Servicio, Action, tipos y los botones en `/admin/users`. Mapear `user_banned` en `login.service` (F5.9).
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_update_profile_status` (solo `active` o `inactive`, `pending`: `22023`; idempotente, sin evento de auditoría si no cambia; último administrador: `23514`; no toca `banned_until`; `42501` sin permiso, `P0002` inexistente, `23505`/`23514`/`23503` conflictos (el Servicio los traduce)).
+- **Pendiente:** schema, Servicio, Action, tipos y los botones en `/admin/users`. Mapear `user_banned` en `login.service` (F5.9).

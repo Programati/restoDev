@@ -139,4 +139,5 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** nada (documentación de la Fase 6).
-- **Pendiente:** RPC `admin_list_users`, schema, Servicio, Action, tipos y la pantalla `/admin/users`.
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_list_users` (devuelve un arreglo `jsonb` con la forma de `UserListItem`; `42501` sin permiso).
+- **Pendiente:** schema, Servicio, Action, tipos y la pantalla `/admin/users`.

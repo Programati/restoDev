@@ -139,4 +139,5 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** nada (documentación de la Fase 6).
-- **Pendiente:** RPC `admin_update_profile`, schema, Servicio, Action y tipos.
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_update_profile` (parcial; `p_set_phone` distingue omitido de `null`; `CHECK` de longitud: `23514`; `42501` sin permiso, `P0002` inexistente, `23505`/`23514`/`23503` conflictos (el Servicio los traduce)).
+- **Pendiente:** schema, Servicio, Action y tipos.

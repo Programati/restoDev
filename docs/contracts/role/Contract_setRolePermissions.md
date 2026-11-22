@@ -169,5 +169,6 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** el trigger anti-escalada (F5.4) y los de auditoría (F4); nada propio de la operación.
-- **Pendiente:** RPC `admin_set_role_permissions` (con la comprobación del último administrador), schema, Servicio, Action, tipos y la pantalla de permisos del rol.
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_set_role_permissions` (aplica solo la diferencia, idempotente, incluye la comprobación del último administrador, `23514`; código inexistente: `P0002`; `permission_codes` nulo: `22023`; `42501` sin permiso, `P0002` inexistente, `23505`/`23514`/`23503` conflictos (el Servicio los traduce)).
+- **Pendiente:** schema, Servicio, Action, tipos y la pantalla de permisos del rol.
 - **A confirmar (HU-ROL-006):** si hace falta una Action `listPermissions` para el selector (`permissions` solo la lee quien tiene `roles.manage`) y si se pueden modificar los permisos de un rol del sistema.

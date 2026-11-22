@@ -151,4 +151,5 @@ sequenceDiagram
 ## Estado de implementación
 
 - **Implementado:** nada (documentación de la Fase 6). La tabla, sus `CHECK` y el trigger de auditoría ya existen.
-- **Pendiente:** RPC `admin_create_role`, schema, Servicio, Action, tipos y el formulario.
+- **Implementado (F6.2, 2026-11-22):** RPC `admin_create_role` (devuelve el `id`; `42501` sin permiso, `P0002` inexistente, `23505`/`23514`/`23503` conflictos (el Servicio los traduce)).
+- **Pendiente:** schema, Servicio, Action, tipos y el formulario.

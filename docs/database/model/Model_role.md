@@ -1,6 +1,6 @@
 # roles
 
-> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger de `is_system` está activo desde F5.3 (`roles_is_system_guard`). Las RPC de escritura quedan pendientes hasta la pantalla de gestión (D13).
+> Estado: implementada en la Fase 2 (migraciones `create_access_tables`, `seed_roles_permissions` y `create_access_read_policies`), aplicada al proyecto de pruebas. El trigger de `is_system` está activo desde F5.3 (`roles_is_system_guard`). Las RPC de escritura (`admin_create_role`, `admin_update_role`, `admin_delete_role`) están implementadas desde F6.2 (migración `create_admin_roles_rpc`, 2026-11-22).
 
 ## Estructura
 
@@ -44,7 +44,7 @@
 
 - **RLS:** habilitada desde la creación de la tabla.
 - **Lectura:** usuarios autenticados con perfil activo (política `roles_select_active_users`; el panel necesita mostrar nombres de rol).
-- **Inserción, actualización y borrado:** sin `GRANT` directo. Las RPC (`admin_create_role`, `admin_update_role`, `admin_delete_role`, con `roles.manage`) están **pendientes** hasta que exista la pantalla de gestión (D13); mientras tanto, solo migración o SQL Editor. El seed lo hace la migración.
+- **Inserción, actualización y borrado:** sin `GRANT` directo. Las RPC (`admin_create_role`, `admin_update_role`, `admin_delete_role`, con `roles.manage`) están implementadas desde F6.2 y son la vía de la app; además, migración o SQL Editor. El seed lo hace la migración.
 - **GRANT:** solo `select` a `authenticated`; nada para `anon`.
 - **Validación en base de datos:** formato de `code`, longitudes y trigger de `is_system` (F5.3).
 - Sin publicación en Realtime.
