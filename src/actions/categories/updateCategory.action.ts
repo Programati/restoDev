@@ -9,6 +9,7 @@ import type { ActionResult } from "@/core/types/action-result"
 import type { CategoryDetail } from "@/core/types/categories/category.types"
 import { ServiceError } from "@/lib/errors"
 import { createClient } from "@/lib/supabase/server"
+import { requirePermission } from "@/lib/auth/requirePermission"
 
 // `input` es `unknown`: una Server Action es un endpoint público y puede recibir cualquier cosa.
 // El tipo real lo establece Zod, no TypeScript.
@@ -25,11 +26,15 @@ export async function updateCategoryAction(input: unknown): Promise<ActionResult
       return { ok: false, error: { code: "UNAUTHORIZED", message: "Sesión requerida" } }
     }
 
-    // TODO(roles): exigir rol `admin` y devolver FORBIDDEN
-    // ("No tenés permiso para modificar categorías") cuando exista el modelo de roles.
-    // Considerar que también se pueden modificar categorías dadas de baja.
+    // 2. Permiso (antes de validar)
+    const denied = await requirePermission(
+      supabase,
+      ["categories.manage"],
+      "No tenés permiso para modificar categorías",
+    )
+    if (denied) return denied
 
-    // 2. Validación
+    // 3. Validación
     const parsed = updateCategorySchema.safeParse(input ?? {})
     if (!parsed.success) {
       const { fieldErrors, formErrors } = z.flattenError(parsed.error)
@@ -44,10 +49,10 @@ export async function updateCategoryAction(input: unknown): Promise<ActionResult
       }
     }
 
-    // 3. Servicio
+    // 4. Servicio
     const category = await updateCategory(supabase, parsed.data, user.id)
 
-    // 4. Efectos secundarios
+    // 5. Efectos secundarios
     revalidatePath("/categories")
 
     return { ok: true, data: category, message: "Categoría actualizada" }

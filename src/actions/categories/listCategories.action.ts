@@ -7,6 +7,7 @@ import { listCategories } from "@/core/services/categories"
 import { ServiceError } from "@/lib/errors"
 import type { ActionResult } from "@/core/types/action-result"
 import type { CategoryListItem } from "@/core/types/categories/category.types"
+import { requirePermission } from "@/lib/auth/requirePermission"
 
 export async function listCategoriesAction(
   input?: unknown,
@@ -20,8 +21,12 @@ export async function listCategoriesAction(
     return { ok: false, error: { code: "UNAUTHORIZED", message: "Sesión requerida" } }
   }
 
-  // TODO(roles): definir qué roles pueden listar y exigir rol admin cuando
-  // `include_deleted` sea true, cuando exista el modelo de roles
+  const denied = await requirePermission(
+    supabase,
+    ["categories.read", "categories.manage"],
+    "No tenés permiso para ver categorías",
+  )
+  if (denied) return denied
 
   const parsed = listCategoriesSchema.safeParse(input ?? {})
   if (!parsed.success) {
@@ -33,6 +38,15 @@ export async function listCategoriesAction(
         fieldErrors: z.flattenError(parsed.error).fieldErrors,
       },
     }
+  }
+
+  if (parsed.data.include_deleted) {
+    const deniedDeleted = await requirePermission(
+      supabase,
+      ["categories.manage"],
+      "No tenés permiso para ver categorías",
+    )
+    if (deniedDeleted) return deniedDeleted
   }
 
   try {

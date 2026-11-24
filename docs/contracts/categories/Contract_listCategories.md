@@ -1,12 +1,12 @@
 # listCategories — Listar categorías
 
-| Campo           | Valor                                                                                                                                                              |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Action          | `src/actions/categories/listCategories.action.ts` (exporta `listCategoriesAction`)                                                                                 |
-| Schema          | `src/core/schemas/categories/listCategories.schema.ts`                                                                                                             |
-| Servicio        | `src/core/services/categories/listCategories.service.ts`                                                                                                           |
-| Permiso         | Sesión activa (provisorio: la política RLS actual permite leer a cualquier usuario autenticado). Pendiente: exigir rol `admin` cuando `include_deleted` sea `true` |
-| Equivalente API | Implementado: `GET /api/categories → 200`                                                                                                                          |
+| Campo           | Valor                                                                                                             |
+| --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Action          | `src/actions/categories/listCategories.action.ts` (exporta `listCategoriesAction`)                                |
+| Schema          | `src/core/schemas/categories/listCategories.schema.ts`                                                            |
+| Servicio        | `src/core/services/categories/listCategories.service.ts`                                                          |
+| Permiso         | Sesión activa y permiso `categories.read` o `categories.manage`; con `include_deleted: true`, `categories.manage` |
+| Equivalente API | Implementado: `GET /api/categories → 200`                                                                         |
 
 ## Uso desde el front
 
@@ -25,7 +25,7 @@ importan en el cliente: son del back.
 **Por qué `include_deleted` es un parámetro y no un filtro del front:** el filtrado de las categorías
 dadas de baja lo hace el Servicio. Por defecto no salen; la pantalla que necesita verlas (por ejemplo,
 para restaurar una categoría) las pide explícitamente. Así una vista normal nunca las muestra por
-olvido, y cuando exista el rol `admin` el permiso se exige en un único lugar.
+olvido, y el permiso (`categories.manage`) se exige en un único lugar.
 
 ```tsx
 const result = await listCategoriesAction({ search, active, include_deleted })
@@ -47,7 +47,7 @@ Todo el input es opcional: `listCategoriesAction()` sin argumentos lista todas l
 | ----------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | `search`          | `string`  | Se recorta (`trim`); máximo 80 caracteres. Vacío = sin filtro. Busca coincidencias parciales en `name`, sin distinguir mayúsculas/minúsculas (no ignora acentos) | No        |
 | `active`          | `boolean` | Si se envía, filtra por `active`. Si se omite, devuelve activas e inactivas                                                                                      | No        |
-| `include_deleted` | `boolean` | Default `false`. Si es `true`, incluye también las categorías dadas de baja (`deleted_at` distinto de `null`). Pendiente: exigir rol `admin`                     | No        |
+| `include_deleted` | `boolean` | Default `false`. Si es `true`, incluye también las categorías dadas de baja (`deleted_at` distinto de `null`). Exige `categories.manage`                         | No        |
 
 Sin paginación por ahora: un menú tiene pocas categorías. Si hiciera falta, se agrega `page` y `page_size` y `data` pasa a `{ items, total, page, page_size }` (cambio de contrato).
 
@@ -88,12 +88,12 @@ Sin paginación por ahora: un menú tiene pocas categorías. Si hiciera falta, s
 
 ## Errores
 
-| code               | Cuándo                                                                                                        | message                              | HTTP (API) |
-| ------------------ | ------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ---------- |
-| `VALIDATION_ERROR` | Falla el schema (`search` demasiado largo, `active` o `include_deleted` no booleanos)                         | Datos inválidos                      | 400        |
-| `UNAUTHORIZED`     | Sin sesión                                                                                                    | Sesión requerida                     | 401        |
-| `FORBIDDEN`        | RLS o GRANT rechazan la lectura (`42501`). Al implementar roles, también si `include_deleted` y no es `admin` | No tenés permiso para ver categorías | 403        |
-| `INTERNAL_ERROR`   | Falla inesperada                                                                                              | Error inesperado. Intentá de nuevo   | 500        |
+| code               | Cuándo                                                                                                                                           | message                              | HTTP (API) |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ | ---------- |
+| `VALIDATION_ERROR` | Falla el schema (`search` demasiado largo, `active` o `include_deleted` no booleanos)                                                            | Datos inválidos                      | 400        |
+| `UNAUTHORIZED`     | Sin sesión                                                                                                                                       | Sesión requerida                     | 401        |
+| `FORBIDDEN`        | No tiene `categories.read` ni `categories.manage`, o pide `include_deleted` sin `categories.manage`, o RLS o GRANT rechazan la lectura (`42501`) | No tenés permiso para ver categorías | 403        |
+| `INTERNAL_ERROR`   | Falla inesperada                                                                                                                                 | Error inesperado. Intentá de nuevo   | 500        |
 
 ```json
 {
@@ -115,6 +115,7 @@ No usa `NOT_FOUND` ni `CONFLICT`: listar nunca falla por ausencia de datos ni po
 - El `%` y el `_` de `search` se tratan como texto literal, no como comodines.
 - Por defecto el listado excluye las categorías dadas de baja (`deleted_at is null`). Se incluyen solo con `include_deleted: true`.
 - `name` y `slug` son únicos incluso entre las dadas de baja, por eso la vista de administración necesita poder listarlas para restaurarlas en vez de crear un duplicado.
+- **Permiso:** la Action exige `categories.read` o `categories.manage` antes de validar y, si `include_deleted` es `true`, `categories.manage` (se comprueba tras validar, porque depende del input). RLS lo refuerza (`categories_select_by_permission`): `categories.read` solo ve las vigentes y `categories.manage` ve todas. El Route Handler `GET /api/categories` traduce `FORBIDDEN` a 403.
 
 ## Efectos secundarios
 
@@ -133,8 +134,16 @@ sequenceDiagram
   Action->>Supabase: auth.getUser()
   Supabase-->>Action: sesión | null
   Action-->>Front: UNAUTHORIZED (si no hay sesión)
+  Action->>Supabase: rpc has_permission (categories.read | categories.manage)
+  Supabase-->>Action: true | false
+  Action-->>Front: FORBIDDEN (si falta el permiso)
   Action->>Zod: validar input ?? {}
   Zod-->>Front: VALIDATION_ERROR + fieldErrors (si falla)
+  opt include_deleted es true
+    Action->>Supabase: rpc has_permission (categories.manage)
+    Supabase-->>Action: true | false
+    Action-->>Front: FORBIDDEN (si falta categories.manage)
+  end
   Action->>Service: listCategories(supabase, dto)
   Service->>Supabase: select en categories (deleted_at null salvo include_deleted, filtros, orden)
   Supabase-->>Service: filas | error (permisos)
@@ -144,5 +153,5 @@ sequenceDiagram
 
 ## Estado de implementación
 
-- **Implementado:** Action, schema Zod (incluye `include_deleted`) y Servicio con filtro de baja lógica.
-- **Pendiente:** exigir rol `admin` para `include_deleted`.
+- **Implementado:** Action (con verificación de permiso), schema Zod (incluye `include_deleted`) y Servicio con filtro de baja lógica.
+- **Pendiente:** nada propio de la operación; falta la pantalla `/categories` que la consuma.
