@@ -5,7 +5,7 @@
 | Action          | `src/actions/categories/deleteCategory.action.ts` (exporta `deleteCategoryAction`)      |
 | Schema          | `src/core/schemas/categories/deleteCategory.schema.ts`                                  |
 | Servicio        | `src/core/services/categories/deleteCategory.service.ts`                                |
-| Permiso         | Actual: cualquier usuario con sesión. Pendiente: exigir rol `admin`                     |
+| Permiso         | Sesión activa y permiso `categories.manage`                                             |
 | Equivalente API | A definir (Route Handler aún no implementado; por ejemplo `DELETE /api/categories/:id`) |
 
 La función exportada es `deleteCategoryAction`. Los códigos HTTP de esta ficha describen un Route
@@ -91,16 +91,16 @@ Campos que **no** se reciben: `deleted_at` (lo fija el Servicio con la fecha act
 
 ## Errores
 
-| code               | Cuándo                                                                                                  | message                                       | HTTP (API) |
-| ------------------ | ------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ---------- |
-| `VALIDATION_ERROR` | Falla el schema (`id` ausente o no es un UUID)                                                          | Datos inválidos                               | 400        |
-| `UNAUTHORIZED`     | Sin sesión                                                                                              | Sesión requerida                              | 401        |
-| `FORBIDDEN`        | La BD rechaza la escritura por RLS o permisos (`42501`). Al implementar roles, también si no es `admin` | No tenés permiso para dar de baja categorías  | 403        |
-| `NOT_FOUND`        | No existe una categoría con ese `id` (o RLS la oculta)                                                  | Categoría no encontrada                       | 404        |
-| `CONFLICT`         | La categoría **ya está dada de baja**                                                                   | La categoría ya está dada de baja             | 409        |
-| `CONFLICT`         | La categoría **sigue activa** (`active = true`)                                                         | Desactivá la categoría antes de darla de baja | 409        |
-| `CONFLICT`         | _Pendiente (requiere `products`):_ la categoría tiene productos activos                                 | A definir (indica el motivo)                  | 409        |
-| `INTERNAL_ERROR`   | Falla inesperada                                                                                        | Error inesperado. Intentá de nuevo            | 500        |
+| code               | Cuándo                                                                                                                     | message                                       | HTTP (API) |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ---------- |
+| `VALIDATION_ERROR` | Falla el schema (`id` ausente o no es un UUID)                                                                             | Datos inválidos                               | 400        |
+| `UNAUTHORIZED`     | Sin sesión                                                                                                                 | Sesión requerida                              | 401        |
+| `FORBIDDEN`        | El usuario no tiene `categories.manage` (lo comprueba la Action) o la BD rechaza la escritura por RLS o permisos (`42501`) | No tenés permiso para dar de baja categorías  | 403        |
+| `NOT_FOUND`        | No existe una categoría con ese `id` (o RLS la oculta)                                                                     | Categoría no encontrada                       | 404        |
+| `CONFLICT`         | La categoría **ya está dada de baja**                                                                                      | La categoría ya está dada de baja             | 409        |
+| `CONFLICT`         | La categoría **sigue activa** (`active = true`)                                                                            | Desactivá la categoría antes de darla de baja | 409        |
+| `CONFLICT`         | _Pendiente (requiere `products`):_ la categoría tiene productos activos                                                    | A definir (indica el motivo)                  | 409        |
+| `INTERNAL_ERROR`   | Falla inesperada                                                                                                           | Error inesperado. Intentá de nuevo            | 500        |
 
 ```json
 {
@@ -136,20 +136,21 @@ Campos que **no** se reciben: `deleted_at` (lo fija el Servicio con la fecha act
 - **La baja no libera `name` ni `slug`.** Siguen ocupados (la unicidad incluye las categorías dadas de baja). Para liberarlos hay que renombrar la categoría con `updateCategory`.
 - **Efecto sobre las lecturas.** Una categoría dada de baja deja de aparecer por defecto en `listCategories` y en `getCategory`; solo se ve con `include_deleted = true`.
 - **Restaurar no existe todavía.** Hasta que haya una HU de restauración, una categoría dada de baja solo se puede renombrar; no hay forma de volver a dejarla vigente desde la app. (Como además queda inactiva, tampoco se podría ofrecer productos desde ella.)
-- RLS está habilitado y el `GRANT` incluye `UPDATE` para `authenticated`. **Actual:** la política provisoria permite el acceso a cualquier usuario autenticado. **Pendiente:** exigir rol `admin` (`TODO(roles)` en la Action).
-- Si falta el `GRANT` o RLS rechaza la escritura, la base responde `42501` y el resultado es `FORBIDDEN`.
+- **Permiso:** la Action comprueba la sesión y, antes de validar con Zod, `categories.manage` con `requirePermission` (`FORBIDDEN` si falta). RLS lo refuerza (`categories_update_by_permission`: la baja es un `UPDATE`; `GRANT` de `UPDATE` para `authenticated`).
+- Si falta el `GRANT` o RLS rechaza la escritura, la base responde `42501` y el resultado es `FORBIDDEN`. Como la Action comprueba el permiso antes, un usuario sin `categories.manage` recibe `FORBIDDEN` y no el `NOT_FOUND` o el `CONFLICT` engañoso que produciría RLS al ocultar o bloquear la fila (el `UPDATE` no afectaría filas y la consulta de existencia podría no verla).
 - **Pendiente de decidir:** la regla "categoría inactiva" hoy la aplica el Servicio, no la base. Una escritura directa por la Data API podría poner `deleted_at` en una categoría activa. Si hay que blindarlo, agregar un `CHECK (deleted_at is null or active = false)` (o trigger) en una migración; ojo, obligaría a que `updateCategory` no pueda reactivar una categoría dada de baja.
 
 ## Validación por capa
 
+- **Action (antes de Zod):** sesión (`UNAUTHORIZED`) y permiso `categories.manage` (`FORBIDDEN`) con `requirePermission`.
 - **Zod en la Action:** `id` presente y con formato UUID.
 - **Servicio:** `UPDATE` atómico con `deleted_at IS NULL` y `active = false`, `deleted_at` y `updated_by`, distinción entre `NOT_FOUND` y los dos `CONFLICT`, traducción de `42501`.
-- **Base de datos:** sin `GRANT` de `DELETE`, la baja física es imposible. No requiere migración nueva por ahora; la regla de productos llegará junto con `products`.
+- **Base de datos:** sin `GRANT` de `DELETE`, la baja física es imposible. El trigger `audit_categories` registra la baja en `audit_logs`. No requiere migración nueva por ahora; la regla de productos llegará junto con `products`.
 
 ## Efectos secundarios
 
 - Tras la baja, se llama a `revalidatePath("/categories")`.
-- Pendiente: registrar la baja en `audit_logs` cuando exista el mecanismo de auditoría.
+- La base registra la baja en `audit_logs` mediante el trigger `audit_categories`. Como la baja lógica es un `UPDATE` de `deleted_at`, el evento es `update` (con `deleted_at` en `new_data` y el usuario de la sesión como `actor_id`), no `delete`. Lo hace el trigger, no la Action ni el Servicio.
 
 ## Flujo
 
@@ -164,10 +165,14 @@ sequenceDiagram
   Action->>Supabase: auth.getUser()
   Supabase-->>Action: sesión | null
   Action-->>Front: UNAUTHORIZED (si no hay sesión)
+  Action->>Supabase: rpc has_permission (categories.manage)
+  Supabase-->>Action: true | false
+  Action-->>Front: FORBIDDEN (si falta el permiso)
   Action->>Zod: validar input ?? {}
   Zod-->>Front: VALIDATION_ERROR (si falla)
   Action->>Service: deleteCategory(supabase, dto, userId)
   Service->>Supabase: update deleted_at, updated_by where id, deleted_at is null y active = false + select
+  Note over Supabase: trigger audit_categories registra el evento update
   Supabase-->>Service: fila | null | error (permisos)
   opt ninguna fila afectada
     Service->>Supabase: select id, active, deleted_at where id
@@ -181,6 +186,6 @@ sequenceDiagram
 
 ## Estado de implementación
 
-- **Implementado:** Action, schema Zod, Servicio y tipos (`DeleteCategoryInput`, `DeleteCategoryDto`), incluida la precondición de categoría inactiva.
-- **Pendiente:** regla de productos activos en la base (junto con `products`), exigir rol `admin`, Route Handler, auditoría y, opcionalmente, el `CHECK` en la base para la regla de inactividad.
+- **Implementado:** Action (con verificación de permiso), schema Zod, Servicio y tipos (`DeleteCategoryInput`, `DeleteCategoryDto`), incluida la precondición de categoría inactiva, y registro de auditoría (trigger `audit_categories`).
+- **Pendiente:** regla de productos activos en la base (junto con `products`), Route Handler y, opcionalmente, el `CHECK` en la base para la regla de inactividad.
 - **A confirmar (HU-CAT-005):** `CONFLICT` si ya está dada de baja y que se devuelva la categoría con `deleted_at`.

@@ -1,6 +1,6 @@
 # HU-CAT-004 — Actualizar categoría
 
-> Estado: Implementada (Server Action). Pendientes: rol `admin`, Route Handler y auditoría.
+> Estado: Implementada (Server Action). Pendiente: Route Handler.
 
 ## Historia
 
@@ -45,7 +45,8 @@ menú**.
     cambió) sin campos de auditoría, y el listado de categorías refleja el cambio.
 16. Si la solicitud incluye `slug`, `deleted_at`, `updated_by` o fechas, esos valores se ignoran.
     Un input con solo el `id` y esos campos se rechaza por no tener nada que modificar.
-17. Si la base rechaza la escritura por permisos, se informa `FORBIDDEN`; si la política de acceso
+17. Si la persona no tiene `categories.manage` o la base rechaza la escritura por permisos, se
+    informa `FORBIDDEN`; si la política de acceso
     oculta la fila, el resultado es `NOT_FOUND`.
 
 ## Fuera de alcance
@@ -53,16 +54,15 @@ menú**.
 - Dar de baja ([HU-CAT-005](./HU_eliminar_categoria.md)) y restaurar una categoría.
 - Modificar varias categorías a la vez (por ejemplo, reordenar en lote).
 - Control de versión optimista.
-- Registro en `audit_logs`.
 
 ## Alcance actual y pendientes
 
-- **Permiso actual:** cualquier usuario autenticado; política RLS provisoria.
-- **Permiso previsto:** rol `admin` (`TODO(roles)`), evaluando si modificar categorías dadas de baja
-  requiere el mismo permiso.
-- **Implementado:** Server Action, schema Zod y Servicio.
-- **Pendiente:** exigir el rol `admin`, el endpoint `PATCH /api/categories/:id` (planificado, todavía
-  no existe) y la auditoría.
+- **Permiso:** `categories.manage`, también para las categorías dadas de baja. La Action lo comprueba
+  antes de validar y RLS lo refuerza (`categories_update_by_permission`).
+- **Implementado:** Server Action con verificación de permiso, schema Zod y Servicio. Cada
+  modificación queda registrada en `audit_logs` (evento `update`) por el trigger `audit_categories`
+  (Fase 4); lo hace la base, no la Action.
+- **Pendiente:** el endpoint `PATCH /api/categories/:id` (planificado, todavía no existe).
 
 ## Decisiones pendientes
 
@@ -80,6 +80,10 @@ menú**.
   [HU-CAT-005](./HU_eliminar_categoria.md).
 
 ## Verificación
+
+> **Pruebas diferidas hasta tener el Front (decisión del 2026-11-21).** Se ejecutan junto con la
+> matriz de la sección 7 de [`Plan_identidad_y_permisos`](../../Plan_identidad_y_permisos.md) (tarea
+> F3.8). Hasta entonces todas las filas quedan en "Pendiente".
 
 | Criterio | Cómo se verificó | Resultado | Fecha |
 | -------- | ---------------- | --------- | ----- |

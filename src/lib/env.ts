@@ -16,3 +16,14 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data
+
+// Clave con privilegios totales sobre Auth. Solo servidor: nunca `NEXT_PUBLIC_`.
+// Se valida al pedirla y no al cargar el módulo: `env.ts` también lo importa el cliente del
+// navegador, donde esta variable no existe y fallar acá rompería toda la app.
+export function getServiceRoleKey(): string {
+  const result = z.string().min(1).safeParse(process.env.SUPABASE_SERVICE_ROLE_KEY)
+  if (!result.success) {
+    throw new Error("Variable de entorno inválida: SUPABASE_SERVICE_ROLE_KEY (solo servidor)")
+  }
+  return result.data
+}

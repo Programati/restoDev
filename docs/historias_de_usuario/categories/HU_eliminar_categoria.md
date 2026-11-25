@@ -1,8 +1,9 @@
 # HU-CAT-005 — Eliminar categoría (baja lógica)
 
-> Estado: Implementada parcialmente. El contrato, la Action, el schema y el Servicio existen; los
-> criterios 8 y 10 se implementaron según la propuesta y siguen pendientes de confirmar. La regla
-> de productos activos (criterio 9) depende de la tabla `products`, que todavía no existe.
+> Estado: Implementada parcialmente y mergeada en `develop`. El contrato, la Action, el schema y el
+> Servicio existen; los criterios 8 y 10 se implementaron según la propuesta y siguen pendientes de
+> confirmar. La regla de productos activos (criterio 9) depende de la tabla `products`, que todavía
+> no existe. La tabla de verificación todavía no se completó (diferida hasta tener el Front).
 
 ## Historia
 
@@ -37,7 +38,8 @@ que ya no corresponde al menú sin perder su historial**.
    _(Pendiente: requiere `products`.)_
 10. Si la baja se realiza con éxito, se devuelve la categoría con su `deleted_at`, sin campos de
     auditoría, y el listado de categorías refleja el cambio. _(Propuesta, a confirmar.)_
-11. Si la base rechaza la escritura por permisos, se informa `FORBIDDEN`.
+11. Si la persona no tiene `categories.manage` o la base rechaza la escritura por permisos, se
+    informa `FORBIDDEN`.
 12. Si la categoría está **activa** (`active = true`), la baja se rechaza con `CONFLICT` y un mensaje
     que pide desactivarla antes, y no se modifica nada. La baja no desactiva la categoría por su
     cuenta: así una categoría activa no queda dada de baja ni sigue apareciendo como activa. Si la
@@ -49,19 +51,22 @@ que ya no corresponde al menú sin perder su historial**.
 - Restaurar una categoría dada de baja (HU futura, sin definir).
 - Dar de baja varias categorías a la vez.
 - Dar de baja o reasignar los productos de la categoría.
-- Registro en `audit_logs`.
 
 ## Alcance actual y pendientes
 
-- **Permiso actual (propuesto):** cualquier usuario autenticado, igual que el resto de `categories`.
-- **Permiso previsto:** rol `admin` (`TODO(roles)`).
-- **Implementado:** contrato, schema, Servicio y Action (`deleteCategoryAction`). La baja es un
-  único `UPDATE` atómico con `deleted_at IS NULL` y `active = false`; el Servicio distingue
-  `NOT_FOUND` y los dos `CONFLICT` (ya dada de baja / sigue activa) con una consulta posterior. No
-  requirió migración: el `GRANT` de `UPDATE` ya existe y no hay `GRANT` de `DELETE`.
+- **Permiso:** `categories.manage`, comprobado en la Action antes de validar y reforzado por RLS
+  (`categories_update_by_permission`, porque la baja es un `UPDATE`). Implementado en la Fase 3 de
+  [`Plan_identidad_y_permisos`](../../Plan_identidad_y_permisos.md).
+- **Implementado y mergeado en `develop`:** contrato, schema, Servicio y Action
+  (`deleteCategoryAction`). La baja es un único `UPDATE` atómico con `deleted_at IS NULL` y
+  `active = false`; el Servicio distingue `NOT_FOUND` y los dos `CONFLICT` (ya dada de baja / sigue
+  activa) con una consulta posterior. No requirió migración: el `GRANT` de `UPDATE` ya existe y no
+  hay `GRANT` de `DELETE`. La baja queda registrada en `audit_logs` por el trigger
+  `audit_categories` (Fase 4); como es un `UPDATE` de `deleted_at`, el evento es `update` y no
+  `delete`.
 - **Pendiente:** la regla de productos activos (criterio 9), que debe crearse en la base junto con
   `products`; el endpoint (a definir); la pantalla/botón en el front (flujo: desactivar y luego dar
-  de baja); la auditoría; y ejecutar las verificaciones de la tabla de abajo.
+  de baja); y completar la tabla de verificación de abajo (diferida hasta tener el Front).
 - La regla de inactividad (criterio 12) hoy la aplica el Servicio; una escritura directa por la Data
   API podría saltearla. Evaluar un `CHECK (deleted_at is null or active = false)` en la base.
 - Hasta que exista la restauración, una categoría dada de baja solo se puede renombrar
@@ -88,6 +93,11 @@ que ya no corresponde al menú sin perder su historial**.
   [HU-CAT-003](./HU_listar_categoria.md), [HU-CAT-004](./HU_actualizar_categoria.md).
 
 ## Verificación
+
+> **Pruebas diferidas hasta tener el Front (decisión del 2026-11-21).** Se ejecutan junto con la
+> matriz de la sección 7 de [`Plan_identidad_y_permisos`](../../Plan_identidad_y_permisos.md) (tarea
+> F3.8). Hasta entonces todas las filas quedan en "Pendiente". El criterio 9 sigue pendiente además
+> hasta que exista `products`.
 
 | Criterio | Cómo se verificó | Resultado | Fecha |
 | -------- | ---------------- | --------- | ----- |

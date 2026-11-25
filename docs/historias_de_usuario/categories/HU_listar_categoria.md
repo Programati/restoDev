@@ -1,7 +1,7 @@
 # HU-CAT-003 — Listar categorías
 
-> Estado: Implementada (Server Action y Route Handler). Pendiente: rol `admin` para
-> `include_deleted`.
+> Estado: Implementada (Server Action y Route Handler). Falta la pantalla `/categories`
+> que consuma el listado.
 
 ## Historia
 
@@ -29,7 +29,8 @@ las que organizan el menú**.
     booleanos), se rechaza con `VALIDATION_ERROR`.
 11. No hay paginación: se devuelven todas las categorías que cumplen los filtros. Si se agrega, el
     contrato cambia.
-12. Si la base rechaza la lectura por permisos, se informa `FORBIDDEN`.
+12. Si la persona no tiene `categories.read` ni `categories.manage`, o pide `include_deleted` sin
+    `categories.manage`, o la base rechaza la lectura por permisos, se informa `FORBIDDEN`.
 13. La operación es de solo lectura, sin efectos secundarios.
 
 ## Fuera de alcance
@@ -41,11 +42,12 @@ las que organizan el menú**.
 
 ## Alcance actual y pendientes
 
-- **Permiso actual:** cualquier usuario autenticado (la política RLS provisoria permite leer).
-- **Permiso previsto:** rol `admin` cuando `include_deleted` sea `true` (`TODO(roles)`).
-- **Implementado:** Server Action, schema Zod y Servicio con filtro de baja lógica.
-- **Pendiente:** exigir el rol `admin` para `include_deleted`. El Route Handler `GET /api/categories`
-  está implementado; todavía no hay pantalla `/categories` que consuma el listado.
+- **Permiso:** `categories.read` o `categories.manage`; con `include_deleted: true`,
+  `categories.manage`. La Action lo comprueba antes de validar (el de `include_deleted`, tras validar)
+  y RLS lo refuerza (`categories_select_by_permission`): `categories.read` solo ve las vigentes.
+- **Implementado:** Server Action con verificación de permiso, schema Zod y Servicio con filtro de
+  baja lógica. El Route Handler `GET /api/categories` está implementado.
+- **Pendiente:** todavía no hay pantalla `/categories` que consuma el listado.
 
 ## Decisiones pendientes
 
@@ -59,6 +61,10 @@ las que organizan el menú**.
 - HU relacionadas: [HU-CAT-002](./HU_obtener_categoria.md), [HU-CAT-005](./HU_eliminar_categoria.md).
 
 ## Verificación
+
+> **Pruebas diferidas hasta tener el Front (decisión del 2026-11-21).** Se ejecutan junto con la
+> matriz de la sección 7 de [`Plan_identidad_y_permisos`](../../Plan_identidad_y_permisos.md) (tarea
+> F3.8). Hasta entonces todas las filas quedan en "Pendiente".
 
 | Criterio | Cómo se verificó | Resultado | Fecha |
 | -------- | ---------------- | --------- | ----- |

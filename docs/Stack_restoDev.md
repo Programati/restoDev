@@ -22,7 +22,7 @@ Respetar cada ítem. No sustituir tecnologías ni agregar alternativas.
 - [ ] Seguridad: RLS en todas las tablas, más `GRANT` explícito a los roles que correspondan (ver `docs/database/supabase-cli.md`)
 - [ ] Autorización: por permisos (`modulo.accion`) resueltos en la base con funciones del esquema `private`; las políticas verifican permisos, no nombres de rol (ver `docs/Plan_identidad_y_permisos.md`)
 - [ ] Auth: Supabase Auth con `@supabase/ssr` (cookies, Middleware)
-- [ ] Clave `service_role`: solo servidor, validada en `env.ts`, nunca `NEXT_PUBLIC_`; se usa únicamente para la API de administración de Auth (bloqueo de usuarios inactivos)
+- [ ] Clave `service_role` (`SUPABASE_SERVICE_ROLE_KEY`): solo servidor, nunca `NEXT_PUBLIC_`; se usa únicamente para la API de administración de Auth (bloqueo de usuarios inactivos). Se lee con `getServiceRoleKey()` en `src/lib/env.ts`, que la valida al pedirla y no al cargar el módulo (`env.ts` también lo importa el cliente del navegador); si falta, la app arranca y solo falla `createAdminClient()`. El cliente es `src/lib/supabase/admin.ts` (`createAdminClient()`, sin sesión y creado por petición) y el bloqueo lo aplica `setUserBanned` (`src/core/services/auth/setUserBanned.service.ts`, con `ban_duration`). No requiere `GRANT` sobre tablas: usa la API de Auth, no la Data API
 - [ ] Archivos: Supabase Storage
 - [ ] Tiempo real: Supabase Realtime (no publicar las tablas de identidad, permisos ni `audit_logs`)
 - [ ] Lógica remota: RPC para funciones SQL complejas y para operaciones sensibles de seguridad (`SECURITY DEFINER` con `search_path` fijo y `REVOKE` a `public` y `anon`); Edge Functions para tareas aisladas
